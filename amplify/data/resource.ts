@@ -1,17 +1,54 @@
-import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 
-/*== STEP 1 ===============================================================
-The section below creates a Todo database table with a "content" field. Try
-adding a new "isDone" field as a boolean. The authorization rule below
-specifies that any user authenticated via an API key can "create", "read",
-"update", and "delete" any "Todo" records.
-=========================================================================*/
+// define database schema here
 const schema = a.schema({
-  Todo: a
+  Image: a
     .model({
-      content: a.string(),
+      title: a.string().default(() => new Date().toISOString()),
+      description: a.string(),
+      width: a.integer().required(), // Example 1920
+      height: a.integer().required(), // Example 1080
+      s3Key: a.string().required(),
+      tags: a.string().array(),
+      created: a.datetime().required(),
+      lastUpdated: a.datetime().required(),
     })
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization((allow) => [
+      allow.owner().to(['create', 'read', 'update', 'delete']), // Creates 'owner' field
+      allow.publicApiKey().to(['read', 'update']), // Services with API key
+      allow.authenticated().to(['read']), // Anyone who is authenticated
+    ]),
+  
+  Edited: a
+    .model({
+      editedFrom: a.id(), // Reference to original image
+      s3Key: a.string().required(),
+      width: a.integer().required(), // Example 1920
+      height: a.integer().required(), // Example 1080
+      created: a.datetime().required(),
+      lastUpdated: a.datetime().required(),
+    })
+    .authorization((allow) => [
+      allow.owner().to(['create', 'read', 'update', 'delete']), // Creates 'owner' field
+      allow.publicApiKey().to(['read', 'update']), // Services with API key
+      allow.authenticated().to(['read']), // Anyone who is authenticated
+    ]),
+
+  Thumbnail: a
+    .model({
+      imageId: a.id().required(), // Reference to original Image
+      s3Key: a.string().required(), // Thumbnail file path
+      width: a.integer().required(), // Thumbnail width
+      height: a.integer().required(), // Thumbnail height
+      size: a.enum(['small', 'medium', 'large']), // Different thumbnail sizes
+      created: a.datetime().required(),
+      lastUpdated: a.datetime().required(),
+    })
+    .authorization((allow) => [
+      allow.owner().to(['create', 'read', 'update', 'delete']), // Creates 'owner' field
+      allow.publicApiKey().to(['read', 'update']), // Services with API key
+      allow.authenticated().to(['read']), // Anyone who is authenticated
+    ]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
@@ -19,38 +56,7 @@ export type Schema = ClientSchema<typeof schema>;
 export const data = defineData({
   schema,
   authorizationModes: {
-    defaultAuthorizationMode: "apiKey",
-    apiKeyAuthorizationMode: {
-      expiresInDays: 30,
-    },
+    defaultAuthorizationMode: 'identityPool',
+    apiKeyAuthorizationMode: { expiresInDays: 30 },
   },
 });
-
-/*== STEP 2 ===============================================================
-Go to your frontend source code. From your client-side code, generate a
-Data client to make CRUDL requests to your table. (THIS SNIPPET WILL ONLY
-WORK IN THE FRONTEND CODE FILE.)
-
-Using JavaScript or Next.js React Server Components, Middleware, Server 
-Actions or Pages Router? Review how to generate Data clients for those use
-cases: https://docs.amplify.aws/gen2/build-a-backend/data/connect-to-API/
-=========================================================================*/
-
-/*
-"use client"
-import { generateClient } from "aws-amplify/data";
-import type { Schema } from "@/amplify/data/resource";
-
-const client = generateClient<Schema>() // use this Data client for CRUDL requests
-*/
-
-/*== STEP 3 ===============================================================
-Fetch records from the database and use them in your frontend component.
-(THIS SNIPPET WILL ONLY WORK IN THE FRONTEND CODE FILE.)
-=========================================================================*/
-
-/* For example, in a React component, you can use this snippet in your
-  function's RETURN statement */
-// const { data: todos } = await client.models.Todo.list()
-
-// return <ul>{todos.map(todo => <li key={todo.id}>{todo.content}</li>)}</ul>
