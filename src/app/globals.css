@@ -1,8 +1,64 @@
 @import "tailwindcss";
 
+/*  
+  To change color scheme, update these CSS variables:
+  
+  Primary Colors (Blue by default):
+  - --color-primary: Main brand color
+  - --color-primary-hover: Darker shade for hover states
+  - --color-primary-light: Light shade for backgrounds
+  
+  Example: To switch to green theme:
+  --color-primary: #10b981;        (emerald-500)
+  --color-primary-hover: #059669;  (emerald-600) 
+  --color-primary-light: #d1fae5;  (emerald-100)
+  
+  Neutral Colors:
+  - Automatically switch between light/dark mode
+  - All grays are centralized and consistent
+*/
+
 :root {
+  /* Base theme colors */
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Color Palette */
+  --color-primary: #3b82f6;        /* blue-500 */
+  --color-primary-hover: #2563eb;  /* blue-600 */
+  --color-primary-light: #dbeafe;  /* blue-100 */
+  --color-primary-text: #1e40af;   /* blue-700 */
+  
+  --color-secondary: #6b7280;      /* gray-500 */
+  --color-secondary-hover: #4b5563; /* gray-600 */
+  --color-secondary-light: #f3f4f6; /* gray-100 */
+  
+  /* Text Colors */
+  --color-text-primary: #111827;   /* gray-900 */
+  --color-text-secondary: #6b7280; /* gray-500 */
+  --color-text-muted: #9ca3af;     /* gray-400 */
+  --color-text-inverse: #ffffff;   /* white */
+  
+  /* Background Colors */
+  --color-background: var(--background);
+  --color-surface: #f9fafb;        /* gray-50 */
+  --color-surface-hover: #f3f4f6;  /* gray-100 */
+  
+  /* Border Colors */
+  --color-border: #d1d5db;         /* gray-300 */
+  --color-border-hover: #9ca3af;   /* gray-400 */
+  --color-border-focus: var(--color-primary); /* blue-500 */
+  
+  /* Semantic Colors */
+  --color-success: #10b981;        /* emerald-500 */
+  --color-warning: #f59e0b;        /* amber-500 */
+  --color-danger: #ef4444;         /* red-500 */
+  --color-danger-hover: #dc2626;   /* red-600 */
+  
+  /* Interactive States */
+  --color-hover-light: #f3f4f6;    /* gray-100 */
+  --color-focus-ring: var(--color-primary);
+  --color-disabled: #d1d5db;       /* gray-300 */
 }
 
 @theme inline {
@@ -16,11 +72,141 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    
+    /* Dark mode color adjustments */
+    --color-text-primary: #f9fafb;   /* gray-50 */
+    --color-text-secondary: #d1d5db; /* gray-300 */
+    --color-text-muted: #9ca3af;     /* gray-400 */
+    
+    --color-surface: #1f2937;        /* gray-800 */
+    --color-surface-hover: #374151;  /* gray-700 */
+    
+    --color-border: #374151;         /* gray-700 */
+    --color-border-hover: #4b5563;   /* gray-600 */
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-background);
+  color: var(--color-foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer components {
+  .heading-primary {
+    @apply text-3xl font-bold mb-6;
+    color: var(--color-text-primary);
+  }
+  
+  .heading-secondary {
+    @apply text-2xl font-semibold mb-4;
+    color: var(--color-text-primary);
+  }
+  
+  .btn-primary {
+    @apply rounded-lg font-medium disabled:cursor-not-allowed;
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    padding: 0.75rem 1rem;
+    transition: background-color 0.2s;
+  }
+  
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+  }
+  
+  .btn-primary:disabled {
+    background-color: var(--color-disabled);
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 rounded-lg;
+    background-color: var(--color-secondary);
+    color: var(--color-text-inverse);
+    transition: background-color 0.2s;
+  }
+  
+  .btn-secondary:hover {
+    background-color: var(--color-secondary-hover);
+  }
+  
+  .btn-danger {
+    @apply text-sm;
+    color: var(--color-danger);
+    transition: color 0.2s;
+  }
+  
+  .btn-danger:hover {
+    color: var(--color-danger-hover);
+  }
+  
+  .form-input {
+    @apply w-full px-3 py-2 rounded-lg;
+    border: 1px solid var(--color-border);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  
+  .form-input:focus {
+    outline: none;
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  .form-label {
+    @apply block text-sm font-medium mb-2;
+    color: var(--color-text-primary);
+  }
+  
+  .dropzone {
+    @apply border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer;
+    border-color: var(--color-border);
+  }
+  
+  .dropzone:hover {
+    border-color: var(--color-border-hover);
+  }
+  
+  .dropzone-active {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-light);
+  }
+  
+  .text-primary {
+    @apply text-xl font-medium;
+    color: var(--color-text-primary);
+  }
+  
+  .text-secondary {
+    color: var(--color-text-secondary);
+  }
+  
+  .text-caption {
+    @apply text-sm;
+    color: var(--color-text-secondary);
+  }
+  
+  .tag-item {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm;
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-text);
+  }
+  
+  .tag-remove {
+    @apply ml-2;
+    color: var(--color-primary-text);
+    transition: color 0.2s;
+  }
+  
+  .tag-remove:hover {
+    color: var(--color-primary-hover);
+  }
+  
+  .icon-upload {
+    @apply w-16 h-16 mx-auto;
+    color: var(--color-text-muted);
+  }
+  
+  .preview-image {
+    @apply max-h-64 mx-auto rounded-lg shadow-md;
+  }
 }

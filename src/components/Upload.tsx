@@ -1,8 +1,10 @@
 'use client';
 
+// import { getCurrentUser } from 'aws-amplify/auth'; TODO
+
 import React, { useState, useRef } from 'react';
-import { uploadProtectedOriginal } from '../services/s3Service';
-import { createImage } from '../services/dbService';
+import { uploadProtectedOriginal } from '@/services/s3Service';
+import { createImage } from '@/services/dbService';
 
 interface ImageMetadata {
   title: string;
@@ -102,6 +104,14 @@ export default function Upload() {
       const s3FileName = crypto.randomUUID();
       const s3Key = await uploadProtectedOriginal(file, s3FileName);
 
+      // // Add this before the createImage call in handleUpload: TODO
+      // try {
+      //   const user = await getCurrentUser();
+      //   console.log('Current user:', user);
+      // } catch (error) {
+      //   console.log('User not authenticated:', error);
+      // }
+
       // Save to database
       await createImage({
         title: metadata.title || file.name,
@@ -128,15 +138,11 @@ export default function Upload() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Upload Image</h1>
+      <h1 className="heading-primary">Upload Image</h1>
       
       {/* Drag and Drop Zone */}
       <div
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-          isDragOver 
-            ? 'border-blue-500 bg-blue-50' 
-            : 'border-gray-300 hover:border-gray-400'
-        }`}
+        className={`dropzone ${isDragOver ? 'dropzone-active' : ''}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -155,30 +161,30 @@ export default function Upload() {
             <img 
               src={preview} 
               alt="Preview" 
-              className="max-h-64 mx-auto rounded-lg shadow-md"
+              className="preview-image"
             />
-            <p className="text-sm text-gray-600">{file?.name}</p>
+            <p className="text-caption">{file?.name}</p>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setFile(null);
                 setPreview(null);
               }}
-              className="text-red-600 hover:text-red-800 text-sm"
+              className="btn-danger"
             >
               Remove
             </button>
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="text-gray-400">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div>
+              <svg className="icon-upload" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
             </div>
             <div>
-              <p className="text-xl font-medium text-gray-900">Drop an image here</p>
-              <p className="text-gray-600 mt-2">or click to select a file</p>
+              <p className="text-primary">Drop an image here</p>
+              <p className="text-secondary mt-2">or click to select a file</p>
             </div>
           </div>
         )}
@@ -188,33 +194,33 @@ export default function Upload() {
       {file && (
         <div className="mt-8 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="form-label">
               Title
             </label>
             <input
               type="text"
               value={metadata.title}
               onChange={(e) => setMetadata(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="form-input"
               placeholder="Enter image title"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="form-label">
               Description
             </label>
             <textarea
               value={metadata.description}
               onChange={(e) => setMetadata(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="form-input"
               placeholder="Enter image description"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="form-label">
               Tags
             </label>
             <div className="flex gap-2 mb-2">
@@ -223,13 +229,13 @@ export default function Upload() {
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="form-input"
                 placeholder="Add a tag"
               />
               <button
                 type="button"
                 onClick={addTag}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                className="btn-secondary"
               >
                 Add
               </button>
@@ -239,12 +245,12 @@ export default function Upload() {
                 {metadata.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
+                    className="tag-item"
                   >
                     {tag}
                     <button
                       onClick={() => removeTag(tag)}
-                      className="ml-2 text-blue-600 hover:text-blue-800"
+                      className="tag-remove"
                     >
                       ×
                     </button>
@@ -257,7 +263,7 @@ export default function Upload() {
           <button
             onClick={handleUpload}
             disabled={isUploading || !metadata.title}
-            className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="btn-primary w-full py-3 px-4"
           >
             {isUploading ? 'Uploading...' : 'Upload Image'}
           </button>
