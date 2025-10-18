@@ -90,4 +90,22 @@ else
     start "Frontend Dev Server" "C:\Program Files\Git\bin\bash.exe" -c "cd '$CURRENT_DIR' && ./start-local-frontend.sh; read -p 'Press any key to close...'"
 fi
 
+# Wait a moment for frontend to start up, then open Chrome
+echo "Waiting for frontend to start up..."
+sleep 5
+
+# Open Chrome to localhost:3000
+echo "Opening Chrome to localhost:3000..."
+if command -v chrome.exe >/dev/null 2>&1; then
+    chrome.exe http://localhost:3000 &
+elif [ -f "/c/Program Files/Google/Chrome/Application/chrome.exe" ]; then
+    "/c/Program Files/Google/Chrome/Application/chrome.exe" http://localhost:3000 &
+elif [ -f "/c/Program Files (x86)/Google/Chrome/Application/chrome.exe" ]; then
+    "/c/Program Files (x86)/Google/Chrome/Application/chrome.exe" http://localhost:3000 &
+else
+    # Fallback: use Windows start command to open default browser
+    echo "Chrome not found, opening in default browser..."
+    cmd.exe /c start http://localhost:3000
+fi
+
 echo "Done. Both services should be running in separate terminals."

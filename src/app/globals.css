@@ -1,532 +1,371 @@
 @import "tailwindcss";
 
-/*  
-  To change color scheme, update these CSS variables:
-  
-  Primary Colors (Blue by default):
-  - --color-primary: Main brand color
-  - --color-primary-hover: Darker shade for hover states
-  - --color-primary-light: Light shade for backgrounds
-  
-  Example: To switch to green theme:
-  --color-primary: #10b981;        (emerald-500)
-  --color-primary-hover: #059669;  (emerald-600) 
-  --color-primary-light: #d1fae5;  (emerald-100)
-  
-  Neutral Colors:
-  - Automatically switch between light/dark mode
-  - All grays are centralized and consistent
-*/
+/* ========================================
+   DESIGN SYSTEM - CLEAN & MINIMAL
+   ======================================== */
 
 :root {
-  /* Base theme colors */
+  /* Light Mode Colors */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
+  --surface: #f8fafc;
+  --surface-hover: #f1f5f9;
+  --border: #e2e8f0;
+  --border-hover: #cbd5e1;
+  --muted: #64748b;
+  --muted-foreground: #475569;
   
-  /* Color Palette */
-  --color-primary: #3b82f6;        /* blue-500 */
-  --color-primary-hover: #2563eb;  /* blue-600 */
-  --color-primary-light: #dbeafe;  /* blue-100 */
-  --color-primary-text: #1e40af;   /* blue-700 */
+  /* Brand Colors */
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-foreground: #ffffff;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --danger-hover: #dc2626;
   
-  --color-secondary: #6b7280;      /* gray-500 */
-  --color-secondary-hover: #4b5563; /* gray-600 */
-  --color-secondary-light: #f3f4f6; /* gray-100 */
-  
-  /* Text Colors */
-  --color-text-primary: #111827;   /* gray-900 */
-  --color-text-secondary: #6b7280; /* gray-500 */
-  --color-text-muted: #9ca3af;     /* gray-400 */
-  --color-text-inverse: #ffffff;   /* white */
-  
-  /* Background Colors */
-  --color-background: var(--background);
-  --color-surface: #f9fafb;        /* gray-50 */
-  --color-surface-hover: #f3f4f6;  /* gray-100 */
-  
-  /* Border Colors */
-  --color-border: #d1d5db;         /* gray-300 */
-  --color-border-hover: #9ca3af;   /* gray-400 */
-  --color-border-focus: var(--color-primary); /* blue-500 */
-  
-  /* Semantic Colors */
-  --color-success: #10b981;        /* emerald-500 */
-  --color-warning: #f59e0b;        /* amber-500 */
-  --color-danger: #ef4444;         /* red-500 */
-  --color-danger-hover: #dc2626;   /* red-600 */
-  
-  /* Interactive States */
-  --color-hover-light: #f3f4f6;    /* gray-100 */
-  --color-focus-ring: var(--color-primary);
-  --color-disabled: #d1d5db;       /* gray-300 */
+  /* Focus & Interactive */
+  --focus-ring: 0 0 0 2px rgb(59 130 246 / 0.2);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+[data-theme="dark"] {
+  /* Dark Mode Colors */
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --surface: #1e293b;
+  --surface-hover: #334155;
+  --border: #334155;
+  --border-hover: #475569;
+  --muted: #94a3b8;
+  --muted-foreground: #cbd5e1;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    
-    /* Dark mode color adjustments */
-    --color-text-primary: #f9fafb;   /* gray-50 */
-    --color-text-secondary: #d1d5db; /* gray-300 */
-    --color-text-muted: #9ca3af;     /* gray-400 */
-    
-    --color-surface: #1f2937;        /* gray-800 */
-    --color-surface-hover: #374151;  /* gray-700 */
-    
-    --color-border: #374151;         /* gray-700 */
-    --color-border-hover: #4b5563;   /* gray-600 */
+  :root:not([data-theme]) {
+    --background: #0f172a;
+    --foreground: #f8fafc;
+    --surface: #1e293b;
+    --surface-hover: #334155;
+    --border: #334155;
+    --border-hover: #475569;
+    --muted: #94a3b8;
+    --muted-foreground: #cbd5e1;
   }
 }
 
 body {
-  background: var(--color-background);
-  color: var(--color-foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+/* ========================================
+   REUSABLE COMPONENTS
+   ======================================== */
+
 @layer components {
-  .heading-primary {
-    @apply text-3xl font-bold mb-6;
-    color: var(--color-text-primary);
-  }
-  
-  .heading-secondary {
-    @apply text-2xl font-semibold mb-4;
-    color: var(--color-text-primary);
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem;
   }
   
   .btn-primary {
-    @apply rounded-lg font-medium disabled:cursor-not-allowed;
-    background-color: var(--color-primary);
-    color: var(--color-text-inverse);
-    padding: 0.75rem 1rem;
-    transition: background-color 0.2s;
+    background: var(--primary);
+    color: var(--primary-foreground);
   }
-  
   .btn-primary:hover:not(:disabled) {
-    background-color: var(--color-primary-hover);
-  }
-  
-  .btn-primary:disabled {
-    background-color: var(--color-disabled);
+    background: var(--primary-hover);
   }
   
   .btn-secondary {
-    @apply px-4 py-2 rounded-lg;
-    background-color: var(--color-secondary);
-    color: var(--color-text-inverse);
-    transition: background-color 0.2s;
+    background: var(--surface);
+    color: var(--foreground);
+    border: 1px solid var(--border);
   }
-  
-  .btn-secondary:hover {
-    background-color: var(--color-secondary-hover);
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--surface-hover);
   }
   
   .btn-danger {
-    @apply text-sm;
-    color: var(--color-danger);
-    transition: color 0.2s;
+    color: var(--danger);
+  }
+  .btn-danger:hover:not(:disabled) {
+    color: var(--danger-hover);
+  }
+
+  .btn-danger-filled {
+    background: var(--danger);
+    color: white;
+    border: 1px solid var(--danger);
+  }
+  .btn-danger-filled:hover:not(:disabled) {
+    background: var(--danger-hover);
+    border: 1px solid var(--danger-hover);
   }
   
-  .btn-danger:hover {
-    color: var(--color-danger-hover);
-  }
-  
+  /* Form Elements */
   .form-input {
-    @apply w-full px-3 py-2 rounded-lg;
-    border: 1px solid var(--color-border);
-    transition: border-color 0.2s, box-shadow 0.2s;
+    @apply w-full transition-all duration-200;
+    padding: 0.625rem 0.875rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--foreground);
   }
-  
   .form-input:focus {
     outline: none;
-    border-color: var(--color-border-focus);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: var(--primary);
+    box-shadow: var(--focus-ring);
   }
   
   .form-label {
     @apply block text-sm font-medium mb-2;
-    color: var(--color-text-primary);
+    color: var(--foreground);
   }
   
-  .dropzone {
-    @apply border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer;
-    border-color: var(--color-border);
+  /* Typography */
+  .heading-primary {
+    @apply text-3xl font-bold;
+    color: var(--foreground);
   }
   
-  .dropzone:hover {
-    border-color: var(--color-border-hover);
+  .heading-secondary {
+    @apply text-2xl font-semibold;
+    color: var(--foreground);
   }
   
-  .dropzone-active {
-    border-color: var(--color-primary);
-    background-color: var(--color-primary-light);
-  }
-  
-  .text-primary {
-    @apply text-xl font-medium;
-    color: var(--color-text-primary);
-  }
-  
-  .text-secondary {
-    color: var(--color-text-secondary);
+  .text-muted {
+    color: var(--muted);
   }
   
   .text-caption {
     @apply text-sm;
-    color: var(--color-text-secondary);
+    color: var(--muted);
   }
   
-  .tag-item {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-sm;
-    background-color: var(--color-primary-light);
-    color: var(--color-primary-text);
+  /* Cards & Surfaces */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+  }
+  
+  /* Tags */
+  .tag {
+    @apply inline-flex items-center text-sm font-medium px-2.5 py-1 rounded-full;
+    background: var(--surface);
+    color: var(--foreground);
+    border: 1px solid var(--border);
   }
   
   .tag-remove {
-    @apply ml-2;
-    color: var(--color-primary-text);
-    transition: color 0.2s;
+    @apply ml-1.5 hover:opacity-75 cursor-pointer;
   }
   
-  .tag-remove:hover {
-    color: var(--color-primary-hover);
-  }
-  
-  .icon-upload {
-    @apply w-16 h-16 mx-auto;
-    color: var(--color-text-muted);
-  }
-  
-  .preview-image {
-    @apply max-h-64 mx-auto rounded-lg shadow-md;
-  }
-  
-  .gallery-grid {
-    @apply grid gap-4;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  }
-  
-  .gallery-item {
-    @apply rounded-lg p-3 transition-all duration-200;
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-  }
-  
-  .gallery-item:hover {
-    @apply shadow-lg;
-    background-color: var(--color-surface-hover);
-  }
-  
-  .gallery-item.selected {
-    border-color: var(--color-primary);
-    border-width: 2px;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-  }
-  
-  .gallery-container {
-    @apply w-full flex flex-col;
-    height: calc(100vh - 60px); /* Account for navbar height */
+  /* Wizard Components */
+  .wizard-container {
+    @apply mx-auto px-6;
+    max-width: calc(100vw - 3rem); /* Full width minus padding */
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
     overflow: hidden;
   }
   
-  .gallery-main {
-    @apply p-4;
-    flex: 1;
-    overflow-y: auto;
+  .wizard-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem;
+    text-align: center;
   }
   
-  .inspector-panel {
-    @apply border-t flex-shrink-0 flex flex-col;
-    background-color: var(--color-surface);
-    border-color: var(--color-border);
-    width: 100%;
-    height: 40%;
-    transition: height 0.3s ease-in-out;
-  }
-  
-  /* Expanded state for bottom panel */
-  .inspector-panel.expanded {
-    height: 90vh;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 50;
-    @apply border-t-0;
-  }
-  
-  /* Landscape orientation - panel on the right */
-  @media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
-    .gallery-container {
-      @apply flex-row;
-    }
-    
-    .inspector-panel {
-      @apply border-l border-t-0;
-      width: 400px;
-      height: 100vh;
-    }
-  }
-  
-  /* Portrait orientation or narrow screens - panel at bottom */
-  @media (max-aspect-ratio: 1/1) {
-    .inspector-panel {
-      height: 45vh;
-    }
-  }
-  
-  /* Very narrow screens */
-  @media (max-width: 640px) {
-    .inspector-panel {
-      height: 50vh;
-    }
-  }
-  
-  .inspector-header {
-    @apply flex justify-between items-center p-4 border-b;
-    border-color: var(--color-border);
-  }
-  
-  .inspector-close-btn {
-    @apply p-1 rounded;
-    color: var(--color-text-secondary);
-    transition: background-color 0.2s;
-  }
-  
-  .inspector-close-btn:hover {
-    background-color: var(--color-surface-hover);
-  }
-  
-  .inspector-expand-btn {
-    @apply p-1 rounded;
-    color: var(--color-text-secondary);
-    transition: background-color 0.2s, transform 0.2s;
-  }
-  
-  .inspector-expand-btn:hover {
-    background-color: var(--color-surface-hover);
-  }
-  
-  /* Hide expand button in landscape mode */
-  @media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
-    .inspector-expand-btn {
-      display: none;
-    }
-  }
-  
-  .inspector-image-container {
-    @apply flex items-center justify-center;
-    background-color: var(--color-surface);
-    /* In collapsed mode, take available space minus description area */
-    flex: 1;
-    padding: 1rem;
-    min-height: 0; /* Allow flex shrinking */
-    overflow: hidden;
-  }
-  
-  /* Larger image when panel is expanded */
-  .inspector-panel.expanded .inspector-image-container {
-    height: 60vh;
-    flex: none;
-  }
-  
-  /* Landscape orientation - use side panel */
-  @media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
-    .inspector-image-container {
-      height: 250px;
-      flex: none;
-    }
-  }
-  
-  /* Portrait/narrow screens - horizontal layout for content */
-  @media (max-aspect-ratio: 1/1) {
-    .inspector-panel {
-      @apply flex-col;
-    }
-    
-    .inspector-image-container {
-      height: 180px;
-    }
-    
-    /* On bottom panel, use horizontal layout for image and content */
-    .inspector-content-wrapper {
-      @apply flex flex-col;
-    }
-  }
-  
-  /* Very narrow screens - even more compact */
-  @media (max-width: 640px) {
-    .inspector-image-container {
-      height: 150px;
-    }
-  }
-  
-  .inspector-image {
-    @apply max-w-full max-h-full object-contain rounded;
-  }
-  
-  .inspector-content {
-    @apply p-4 overflow-y-auto flex-1;
-  }
-  
-  .inspector-content-wrapper {
-    @apply flex flex-col;
-    height: calc(100% - 60px); /* Account for header height */
-    overflow: hidden;
-  }
-  
-  /* Always use vertical layout in collapsed mode */
-  .inspector-content-wrapper {
-    @apply flex-col;
-  }
-  
-  /* Portrait/narrow screens - override any horizontal layout */
-  @media (max-aspect-ratio: 1/1) and (min-width: 768px) {
-    .inspector-content-wrapper {
-      @apply flex-col;
-    }
-    
-    .inspector-image-container {
-      width: 100%;
-      height: calc(100% - 80px);
-    }
-    
-    .inspector-content {
-      width: 100%;
-    }
-    
-    /* But when expanded, allow scrolling layout */
-    .inspector-panel.expanded .inspector-content-wrapper {
-      @apply flex-col;
-      height: auto;
-    }
-    
-    .inspector-panel.expanded .inspector-image-container {
-      width: 100%;
-      height: 60vh;
-    }
-  }
-  
-  .inspector-section {
-    @apply mb-4 last:mb-0;
-  }
-  
-  .inspector-description {
-    @apply p-4 border-t;
-    border-color: var(--color-border);
-  }
-  
-  .inspector-description-compact {
-    @apply px-4 py-3 border-t;
-    border-color: var(--color-border);
-    height: 60px;
-    max-height: 60px;
-    min-height: 60px;
-    overflow: hidden;
-    flex-shrink: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    line-height: 1.4;
-  }
-  
-  .inspector-description-compact p {
-    margin: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-  }
-  
-  /* In landscape mode, make description smaller */
-  @media (min-width: 1024px) and (min-aspect-ratio: 1/1) {
-    .inspector-description-compact {
-      height: 50px;
-      max-height: 50px;
-      min-height: 50px;
-      -webkit-line-clamp: 1;
-    }
-    
-    .inspector-description-compact p {
-      -webkit-line-clamp: 1;
-    }
-  }
-  
-  .inspector-details {
-    @apply p-4 overflow-y-auto;
-    transition: opacity 0.2s ease-in-out;
-  }
-  
-  .inspector-details.hidden {
-    display: none;
-  }
-  
-  .inspector-details.visible {
-    display: block;
-  }
-  
-  /* Fullscreen Modal */
-  .fullscreen-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.95);
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .wizard-content {
     padding: 2rem;
   }
   
-  .fullscreen-content {
-    position: relative;
-    max-width: 95vw;
-    max-height: 95vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .wizard-steps {
+    @apply flex items-center justify-center mb-8 space-x-4;
   }
   
-  .fullscreen-close-btn {
-    position: absolute;
-    top: -3rem;
-    right: -1rem;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 50%;
-    width: 2.5rem;
-    height: 2.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .wizard-step {
+    @apply flex items-center space-x-2 text-sm;
+  }
+  
+  .wizard-step-circle {
+    @apply w-8 h-8 rounded-full flex items-center justify-center font-semibold transition-all;
+    border: 2px solid var(--border);
+    background: var(--background);
+    color: var(--muted);
+  }
+  
+  .wizard-step-circle.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+  
+  .wizard-step-circle.completed {
+    background: var(--success);
+    border-color: var(--success);
     color: white;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    z-index: 101;
   }
   
-  .fullscreen-close-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+  .wizard-step-connector {
+    @apply h-px flex-1;
+    background: var(--border);
+  }
+  .wizard-step-connector.completed {
+    background: var(--success);
   }
   
-  .fullscreen-image {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    border-radius: 0.5rem;
+  /* Dropzone */
+  .dropzone {
+    @apply border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all;
+    border-color: var(--border);
+    background: var(--background);
+  }
+  
+  .dropzone-compact {
+    @apply border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all;
+    border-color: var(--border);
+    background: var(--background);
+    min-height: 120px;
+  }
+  
+  .dropzone:hover,
+  .dropzone.drag-active {
+    border-color: var(--primary);
+    background: var(--surface);
+  }
+  
+  .dropzone.drag-reject {
+    border-color: var(--danger);
+    background: rgba(239, 68, 68, 0.05);
+  }
+  
+  /* File Preview Grid */
+  .file-grid {
+    @apply grid gap-4 mt-6;
+    grid-template-columns: repeat(auto-fill, 150px);
+    justify-content: center;
+  }
+  
+  .file-preview {
+    @apply relative rounded-lg overflow-hidden aspect-square;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  
+  .file-preview:hover .file-remove {
+    opacity: 1;
+  }
+  
+  .file-preview.cursor-pointer:hover {
+    border-color: var(--border-hover);
+    background: var(--surface-hover);
+  }
+  
+  .file-remove {
+    @apply absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-sm cursor-pointer transition-opacity;
+    background: var(--danger);
+    color: white;
+    opacity: 0;
+  }
+  
+  /* Gallery Styles */
+  .gallery-grid {
+    @apply grid gap-4 auto-rows-fr;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+  
+  @media (min-aspect-ratio: 16/9) {
+    .gallery-grid {
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+  }
+  
+  .gallery-item {
+    @apply relative overflow-hidden rounded-lg cursor-pointer transition-all duration-200;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  
+  .gallery-item:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Inspector Panel */
+  .inspector {
+    @apply transition-all duration-300 ease-out;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
+  
+  .inspector-header {
+    @apply flex items-center justify-between p-4;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .inspector-content {
+    padding: 1.5rem;
+  }
+  
+  /* Fullscreen Modal */
+  .modal-backdrop {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+    background: rgba(0, 0, 0, 0.9);
+  }
+  
+  .modal-close {
+    @apply absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors;
+  }
+  
+  /* Confirmation Modal */
+  .confirmation-backdrop {
+    @apply fixed inset-0 z-50 flex items-start justify-center p-4 pt-20;
+    background: rgba(0, 0, 0, 0.5);
+  }
+  
+  .confirmation-modal {
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    max-width: 400px;
+    width: 100%;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+  
+  .confirmation-header {
+    @apply text-xl font-semibold mb-4;
+    color: var(--foreground);
+  }
+  
+  .confirmation-message {
+    @apply mb-6;
+    color: var(--muted);
+  }
+  
+  .confirmation-actions {
+    @apply flex space-x-3 justify-end;
+  }
+  
+  /* Utilities */
+  .container {
+    @apply mx-auto px-4;
+    max-width: 1280px;
+  }
+  
+  .sr-only {
+    @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
   }
 }
