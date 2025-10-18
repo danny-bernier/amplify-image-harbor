@@ -175,6 +175,21 @@ body {
     overflow: hidden;
   }
   
+  /* Remove wizard padding on narrow screens */
+  @media (max-width: 480px) {
+    .wizard-container {
+      @apply px-2; /* Minimal padding */
+      max-width: calc(100vw - 1rem);
+    }
+  }
+  
+  @media (max-width: 360px) {
+    .wizard-container {
+      @apply px-1; /* Even less padding */
+      max-width: calc(100vw - 0.5rem);
+    }
+  }
+  
   .wizard-header {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
@@ -273,6 +288,92 @@ body {
     background: var(--danger);
     color: white;
     opacity: 0;
+  }
+  
+  /* Metadata Step Styles */
+  .metadata-grid {
+    @apply grid gap-6;
+    grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+  }
+  
+  .metadata-item {
+    @apply flex gap-4 p-4 rounded-lg border;
+    background: var(--surface);
+    border-color: var(--border);
+  }
+  
+  .metadata-image-container {
+    @apply flex-shrink-0;
+    width: 100px;
+  }
+  
+  .metadata-form {
+    @apply flex-1 space-y-3;
+  }
+  
+  .metadata-field {
+    @apply flex gap-3 items-start;
+  }
+  
+  .metadata-label {
+    @apply text-sm font-medium flex-shrink-0;
+    color: var(--foreground);
+    width: 70px;
+    padding-top: 0.5rem;
+  }
+  
+  /* For narrow screens, adjust grid spacing */
+  @media (max-width: 768px) {
+    .metadata-grid {
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    }
+  }
+  
+  /* For very narrow screens, remove grid padding and stack labels */
+  @media (max-width: 480px) {
+    .metadata-grid {
+      gap: 0.75rem;
+      grid-template-columns: 1fr;
+      margin: 0 -1.5rem; /* Negative margin to extend to edges */
+    }
+    
+    .metadata-item {
+      @apply gap-3 p-3 mx-1; /* Minimal horizontal margin */
+    }
+    
+    .metadata-image-container {
+      width: 80px;
+    }
+    
+    .metadata-form {
+      @apply space-y-2;
+    }
+    
+    .metadata-field {
+      @apply flex-col gap-1;
+    }
+    
+    .metadata-label {
+      width: auto;
+      padding-top: 0;
+    }
+  }
+  
+  /* For extremely narrow screens, remove all side padding */
+  @media (max-width: 360px) {
+    .metadata-grid {
+      margin: 0 -1.5rem; /* Extend further to screen edges */
+    }
+    
+    .metadata-item {
+      @apply mx-0 p-2; /* No horizontal margin, minimal padding */
+      border-radius: 0.5rem;
+    }
+    
+    .metadata-image-container {
+      width: 70px;
+    }
   }
   
   /* Gallery Styles */

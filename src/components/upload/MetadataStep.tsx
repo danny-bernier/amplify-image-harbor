@@ -19,57 +19,45 @@ export function MetadataStep({
   onNext, 
   onPrev 
 }: MetadataStepProps) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [tagInput, setTagInput] = useState('');
+  const [tagInputs, setTagInputs] = useState<Record<string, string>>({});
 
-  const currentFile = selectedFiles[currentImageIndex];
-  const currentMetadata = fileMetadata[currentFile?.id] || {};
-
-  const updateCurrentMetadata = (field: keyof FileMetadata, value: any) => {
-    if (!currentFile) return;
-    
-    onMetadataChange(currentFile.id, {
+  const updateMetadata = (fileId: string, field: keyof FileMetadata, value: any) => {
+    const currentMetadata = fileMetadata[fileId] || {};
+    onMetadataChange(fileId, {
       ...currentMetadata,
       [field]: value
     });
   };
 
-  const addTag = () => {
-    if (!tagInput.trim() || !currentFile) return;
+  const addTag = (fileId: string) => {
+    const tagInput = tagInputs[fileId];
+    if (!tagInput?.trim()) return;
     
+    const currentMetadata = fileMetadata[fileId] || {};
     const currentTags = currentMetadata.tags || [];
     const newTag = tagInput.trim();
     
     if (!currentTags.includes(newTag)) {
-      updateCurrentMetadata('tags', [...currentTags, newTag]);
+      updateMetadata(fileId, 'tags', [...currentTags, newTag]);
     }
     
-    setTagInput('');
+    setTagInputs(prev => ({ ...prev, [fileId]: '' }));
   };
 
-  const removeTag = (tagToRemove: string) => {
+  const removeTag = (fileId: string, tagToRemove: string) => {
+    const currentMetadata = fileMetadata[fileId] || {};
     const currentTags = currentMetadata.tags || [];
-    updateCurrentMetadata('tags', currentTags.filter(tag => tag !== tagToRemove));
+    updateMetadata(fileId, 'tags', currentTags.filter(tag => tag !== tagToRemove));
   };
 
-  const handleTagInputKeyPress = (e: React.KeyboardEvent) => {
+  const handleTagInputChange = (fileId: string, value: string) => {
+    setTagInputs(prev => ({ ...prev, [fileId]: value }));
+  };
+
+  const handleTagInputKeyPress = (e: React.KeyboardEvent, fileId: string) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      addTag();
-    }
-  };
-
-  const goToNextImage = () => {
-    if (currentImageIndex < selectedFiles.length - 1) {
-      setCurrentImageIndex(currentImageIndex + 1);
-      setTagInput('');
-    }
-  };
-
-  const goToPrevImage = () => {
-    if (currentImageIndex > 0) {
-      setCurrentImageIndex(currentImageIndex - 1);
-      setTagInput('');
+      addTag(fileId);
     }
   };
 
@@ -86,130 +74,123 @@ export function MetadataStep({
 
   return (
     <div className="space-y-6">
-      {/* Image Navigation */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="heading-secondary">
-          Add Details ({currentImageIndex + 1} of {selectedFiles.length})
+          Add Details ({selectedFiles.length} images)
         </h3>
-        
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={goToPrevImage}
-            disabled={currentImageIndex === 0}
-            className="btn btn-secondary text-sm"
-          >
-            ← Previous
-          </button>
-          <span className="text-caption px-3">
-            {currentImageIndex + 1} / {selectedFiles.length}
-          </span>
-          <button
-            onClick={goToNextImage}
-            disabled={currentImageIndex === selectedFiles.length - 1}
-            className="btn btn-secondary text-sm"
-          >
-            Next →
-          </button>
+        <div className="text-caption">
+          Step 2 of 3: Add details for each image (optional)
         </div>
       </div>
 
-      {/* Current Image and Form */}
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Image Preview */}
-        <div className="space-y-4">
-          <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200">
-            <Image
-              src={currentFile.preview}
-              alt={currentFile.file.name}
-              width={600}
-              height={400}
-              className="w-full h-full object-contain"
-              unoptimized
-            />
-          </div>
+      {/* Images Grid */}
+      <div className="metadata-grid">
+        {selectedFiles.map((file, index) => {
+          const metadata = fileMetadata[file.id] || {};
+          const tagInput = tagInputs[file.id] || '';
           
-          <div className="text-center">
-            <p className="text-caption font-medium">{currentFile.file.name}</p>
-            <p className="text-xs text-gray-400">
-              {(currentFile.file.size / 1024 / 1024).toFixed(1)} MB
-            </p>
-          </div>
-        </div>
-
-        {/* Metadata Form */}
-        <div className="space-y-6">
-          {/* Title */}
-          <div>
-            <label className="form-label">
-              Title
-            </label>
-            <input
-              type="text"
-              value={currentMetadata.title || ''}
-              onChange={(e) => updateCurrentMetadata('title', e.target.value)}
-              placeholder="Enter a title for this image"
-              className="form-input"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="form-label">
-              Description
-            </label>
-            <textarea
-              value={currentMetadata.description || ''}
-              onChange={(e) => updateCurrentMetadata('description', e.target.value)}
-              placeholder="Describe this image..."
-              rows={4}
-              className="form-input resize-none"
-            />
-          </div>
-
-          {/* Tags */}
-          <div>
-            <label className="form-label">
-              Tags
-            </label>
-            <div className="space-y-3">
-              {/* Tag Input */}
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyPress={handleTagInputKeyPress}
-                  placeholder="Add a tag"
-                  className="form-input flex-1"
-                />
-                <button
-                  onClick={addTag}
-                  disabled={!tagInput.trim()}
-                  className="btn-secondary"
-                >
-                  Add
-                </button>
+          return (
+            <div key={file.id} className="metadata-item">
+              {/* Image Preview */}
+              <div className="metadata-image-container">
+                <div className="aspect-square rounded-lg overflow-hidden bg-surface border border-border">
+                  <Image
+                    src={file.preview}
+                    alt={file.file.name}
+                    width={120}
+                    height={120}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                </div>
+                <div className="mt-2 text-center">
+                  <p className="text-xs font-medium truncate" title={file.file.name}>
+                    {file.file.name}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {(file.file.size / 1024 / 1024).toFixed(1)} MB
+                  </p>
+                </div>
               </div>
 
-              {/* Current Tags */}
-              {currentMetadata.tags && currentMetadata.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {currentMetadata.tags.map((tag, index) => (
-                    <span key={index} className="tag">
-                      {tag}
-                      <button
-                        onClick={() => removeTag(tag)}
-                        className="tag-remove"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
+              {/* Form Fields */}
+              <div className="metadata-form">
+                {/* Title */}
+                <div className="metadata-field">
+                  <label className="metadata-label">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={metadata.title || ''}
+                    onChange={(e) => updateMetadata(file.id, 'title', e.target.value)}
+                    placeholder="Enter a title for this image"
+                    className="form-input text-sm"
+                  />
                 </div>
-              )}
+
+                {/* Description */}
+                <div className="metadata-field">
+                  <label className="metadata-label">
+                    Description
+                  </label>
+                  <textarea
+                    value={metadata.description || ''}
+                    onChange={(e) => updateMetadata(file.id, 'description', e.target.value)}
+                    placeholder="Describe this image..."
+                    rows={2}
+                    className="form-input resize-none text-sm"
+                  />
+                </div>
+
+                {/* Tags */}
+                <div className="metadata-field">
+                  <label className="metadata-label">
+                    Tags
+                  </label>
+                  <div className="space-y-2">
+                    {/* Tag Input */}
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        value={tagInput}
+                        onChange={(e) => handleTagInputChange(file.id, e.target.value)}
+                        onKeyPress={(e) => handleTagInputKeyPress(e, file.id)}
+                        placeholder="Add a tag"
+                        className="form-input flex-1 text-sm"
+                      />
+                      <button
+                        onClick={() => addTag(file.id)}
+                        disabled={!tagInput.trim()}
+                        className="btn btn-secondary text-sm px-3"
+                      >
+                        Add
+                      </button>
+                    </div>
+
+                    {/* Current Tags */}
+                    {metadata.tags && metadata.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {metadata.tags.map((tag, tagIndex) => (
+                          <span key={tagIndex} className="tag text-xs">
+                            {tag}
+                            <button
+                              onClick={() => removeTag(file.id, tag)}
+                              className="tag-remove"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
       {/* Progress Indicator */}
@@ -217,33 +198,40 @@ export function MetadataStep({
         <div className="flex justify-between text-sm">
           <span className="text-caption">Metadata Progress</span>
           <span className="text-caption">
-            {Object.keys(fileMetadata).length} of {selectedFiles.length} images completed
+            {(() => {
+              const imagesWithMetadata = selectedFiles.filter(file => {
+                const metadata = fileMetadata[file.id];
+                return metadata && (metadata.title || metadata.description || (metadata.tags && metadata.tags.length > 0));
+              }).length;
+              return `${imagesWithMetadata} of ${selectedFiles.length} images have details`;
+            })()}
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-surface rounded-full h-2 border border-border">
           <div 
-            className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+            className="bg-green-500 h-full rounded-full transition-all duration-300"
             style={{ 
-              width: `${(Object.keys(fileMetadata).length / selectedFiles.length) * 100}%` 
+              width: `${selectedFiles.length > 0 ? (() => {
+                const imagesWithMetadata = selectedFiles.filter(file => {
+                  const metadata = fileMetadata[file.id];
+                  return metadata && (metadata.title || metadata.description || (metadata.tags && metadata.tags.length > 0));
+                }).length;
+                return (imagesWithMetadata / selectedFiles.length) * 100;
+              })() : 0}%` 
             }}
           />
         </div>
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between items-center pt-6 border-t">
+      <div className="flex justify-between items-center pt-6 border-t border-border">
         <button onClick={onPrev} className="btn btn-secondary">
           ← Back to File Selection
         </button>
         
-        <div className="text-center">
-          <p className="text-caption mb-2">
-            Step 2 of 3: Add details for each image (optional)
-          </p>
-          <button onClick={onNext} className="btn btn-primary">
-            Next: Upload Images →
-          </button>
-        </div>
+        <button onClick={onNext} className="btn btn-primary">
+          Next: Upload Images →
+        </button>
       </div>
     </div>
   );
