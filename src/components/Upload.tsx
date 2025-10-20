@@ -3,7 +3,7 @@
 // import { getCurrentUser } from 'aws-amplify/auth'; TODO
 
 import React, { useState, useRef } from 'react';
-import { uploadProtectedOriginal } from '@/services/s3Service';
+import { uploadPrivateOriginal } from '@/services/s3Service';
 import { createImage } from '@/services/dbService';
 
 interface ImageMetadata {
@@ -102,7 +102,7 @@ export default function Upload() {
 
       // Upload to S3
       const s3FileName = crypto.randomUUID();
-      const s3Key = await uploadProtectedOriginal(file, s3FileName);
+      const s3Key = await uploadPrivateOriginal(file, s3FileName);
 
       // // Add this before the createImage call in handleUpload: TODO
       // try {

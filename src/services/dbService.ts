@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Database service for managing image, edited image, and thumbnail records
+ * Provides CRUD operations for all image-related data models with proper error handling
+ * and automatic timestamp management.
+ * 
+ * @author Image Harbor Team
+ * @version 1.0.0
+ */
+
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../amplify/data/resource';
 
@@ -6,6 +15,9 @@ const client = generateClient<Schema>();
 
 // ============ IMAGE OPERATIONS ============
 
+/**
+ * Input interface for creating a new image record
+ */
 export interface CreateImageInput {
   title?: string;
   description?: string;
@@ -15,6 +27,12 @@ export interface CreateImageInput {
   tags?: string[];
 }
 
+/**
+ * Create a new image record in the database
+ * @param input - The image data to store
+ * @returns Promise resolving to the created image record
+ * @throws Error if creation fails
+ */
 export const createImage = async (input: CreateImageInput) => {
   try {
     const now = new Date().toISOString();
@@ -35,6 +53,12 @@ export const createImage = async (input: CreateImageInput) => {
   }
 };
 
+/**
+ * Get an image record by ID
+ * @param id - The unique identifier of the image
+ * @returns Promise resolving to the image record or null if not found
+ * @throws Error if retrieval fails
+ */
 export const getImage = async (id: string) => {
   try {
     const result = await client.models.Image.get({ id });
@@ -50,6 +74,12 @@ export const getImage = async (id: string) => {
   }
 };
 
+/**
+ * List all images with optional limit
+ * @param limit - Maximum number of images to return (default: 100)
+ * @returns Promise resolving to an array of image records
+ * @throws Error if retrieval fails
+ */
 export const listImages = async (limit?: number) => {
   try {
     const result = await client.models.Image.list({
@@ -67,6 +97,13 @@ export const listImages = async (limit?: number) => {
   }
 };
 
+/**
+ * Update an existing image record
+ * @param id - The unique identifier of the image to update
+ * @param updates - Partial image data to update
+ * @returns Promise resolving to the updated image record
+ * @throws Error if update fails
+ */
 export const updateImage = async (id: string, updates: Partial<CreateImageInput>) => {
   try {
     const result = await client.models.Image.update({
@@ -86,6 +123,12 @@ export const updateImage = async (id: string, updates: Partial<CreateImageInput>
   }
 };
 
+/**
+ * Delete an image record from the database
+ * @param id - The unique identifier of the image to delete
+ * @returns Promise resolving to the deleted image record
+ * @throws Error if deletion fails
+ */
 export const deleteImage = async (id: string) => {
   try {
     const result = await client.models.Image.delete({ id });
@@ -103,6 +146,9 @@ export const deleteImage = async (id: string) => {
 
 // ============ EDITED OPERATIONS ============
 
+/**
+ * Input interface for creating a new edited image record
+ */
 export interface CreateEditedInput {
   imageId: string;
   s3Key: string;
@@ -110,6 +156,12 @@ export interface CreateEditedInput {
   height: number;
 }
 
+/**
+ * Create a new edited image record in the database
+ * @param input - The edited image data to store
+ * @returns Promise resolving to the created edited image record
+ * @throws Error if creation fails
+ */
 export const createEdited = async (input: CreateEditedInput) => {
   try {
     const now = new Date().toISOString();
@@ -130,6 +182,12 @@ export const createEdited = async (input: CreateEditedInput) => {
   }
 };
 
+/**
+ * Get an edited image record by ID
+ * @param id - The unique identifier of the edited image
+ * @returns Promise resolving to the edited image record or null if not found
+ * @throws Error if retrieval fails
+ */
 export const getEdited = async (id: string) => {
   try {
     const result = await client.models.Edited.get({ id });
@@ -145,6 +203,12 @@ export const getEdited = async (id: string) => {
   }
 };
 
+/**
+ * List all edited versions of a specific original image
+ * @param imageId - The ID of the original image
+ * @returns Promise resolving to an array of edited image records
+ * @throws Error if retrieval fails
+ */
 export const listEditedByOriginal = async (imageId: string) => {
   try {
     const result = await client.models.Edited.list({
@@ -166,6 +230,13 @@ export const listEditedByOriginal = async (imageId: string) => {
   }
 };
 
+/**
+ * Update an existing edited image record
+ * @param id - The unique identifier of the edited image to update
+ * @param updates - Partial edited image data to update
+ * @returns Promise resolving to the updated edited image record
+ * @throws Error if update fails
+ */
 export const updateEdited = async (id: string, updates: Partial<CreateEditedInput>) => {
   try {
     const result = await client.models.Edited.update({
@@ -185,6 +256,12 @@ export const updateEdited = async (id: string, updates: Partial<CreateEditedInpu
   }
 };
 
+/**
+ * Delete an edited image record from the database
+ * @param id - The unique identifier of the edited image to delete
+ * @returns Promise resolving to the deleted edited image record
+ * @throws Error if deletion fails
+ */
 export const deleteEdited = async (id: string) => {
   try {
     const result = await client.models.Edited.delete({ id });
@@ -202,12 +279,21 @@ export const deleteEdited = async (id: string) => {
 
 // ============ THUMBNAIL OPERATIONS ============
 
+/**
+ * Input interface for creating a new thumbnail record
+ */
 export interface CreateThumbnailInput {
   imageId: string;
   s3Key: string;
   size?: 'small' | 'medium' | 'large';
 }
 
+/**
+ * Create a new thumbnail record in the database
+ * @param input - The thumbnail data to store
+ * @returns Promise resolving to the created thumbnail record
+ * @throws Error if creation fails
+ */
 export const createThumbnail = async (input: CreateThumbnailInput) => {
   try {
     const now = new Date().toISOString();
@@ -228,6 +314,12 @@ export const createThumbnail = async (input: CreateThumbnailInput) => {
   }
 };
 
+/**
+ * Get a thumbnail record by ID
+ * @param id - The unique identifier of the thumbnail
+ * @returns Promise resolving to the thumbnail record or null if not found
+ * @throws Error if retrieval fails
+ */
 export const getThumbnail = async (id: string) => {
   try {
     const result = await client.models.Thumbnail.get({ id });
@@ -243,6 +335,13 @@ export const getThumbnail = async (id: string) => {
   }
 };
 
+/**
+ * Get a specific thumbnail by image ID and size
+ * @param imageId - The ID of the original image
+ * @param size - The thumbnail size to retrieve
+ * @returns Promise resolving to the thumbnail record or null if not found
+ * @throws Error if retrieval fails
+ */
 export const getThumbnailBySize = async (imageId: string, size: 'small' | 'medium' | 'large') => {
   try {
     const result = await client.models.Thumbnail.list({
@@ -267,6 +366,13 @@ export const getThumbnailBySize = async (imageId: string, size: 'small' | 'mediu
   }
 };
 
+/**
+ * Update an existing thumbnail record
+ * @param id - The unique identifier of the thumbnail to update
+ * @param updates - Partial thumbnail data to update
+ * @returns Promise resolving to the updated thumbnail record
+ * @throws Error if update fails
+ */
 export const updateThumbnail = async (id: string, updates: Partial<CreateThumbnailInput>) => {
   try {
     const result = await client.models.Thumbnail.update({
@@ -286,6 +392,12 @@ export const updateThumbnail = async (id: string, updates: Partial<CreateThumbna
   }
 };
 
+/**
+ * Delete a thumbnail record from the database
+ * @param id - The unique identifier of the thumbnail to delete
+ * @returns Promise resolving to the deleted thumbnail record
+ * @throws Error if deletion fails
+ */
 export const deleteThumbnail = async (id: string) => {
   try {
     const result = await client.models.Thumbnail.delete({ id });
