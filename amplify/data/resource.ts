@@ -39,7 +39,7 @@ const schema = a.schema({
     .model({
       imageId: a.id().required(), // Reference to original Image
       s3Key: a.string().required(), // Thumbnail file path
-      size: a.enum(['small', 'medium', 'large']), // Different thumbnail sizes
+      size: a.enum(['SMALL', 'MEDIUM', 'LARGE']), // Different thumbnail sizes
       created: a.datetime().required(),
       lastUpdated: a.datetime().required(),
     })

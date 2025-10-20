@@ -10,19 +10,20 @@
 import { randomUUID } from 'crypto';
 
 /**
- * Standard thumbnail size dimensions in pixels
+ * Enhanced thumbnail size enumeration with value and name properties
  */
-// Thumbnail size constants
 export const THUMBNAIL_SIZES = {
-  SMALL: 150,
-  MEDIUM: 300,
-  LARGE: 1200,
+  SMALL: { value: 150, name: 'SMALL' },
+  MEDIUM: { value: 300, name: 'MEDIUM' },
+  LARGE: { value: 1200, name: 'LARGE' }
 } as const;
+
+export type ThumbnailSizeKey = keyof typeof THUMBNAIL_SIZES;
+export type ThumbnailSize = typeof THUMBNAIL_SIZES[ThumbnailSizeKey];
 
 /**
  * Output format for generated thumbnails (JPEG)
  */
-// Thumbnail output format
 export const THUMBNAIL_FORMAT = 'image/jpeg' as const;
 export const THUMBNAIL_QUALITY = 0.85 as const; // JPEG quality (0.0 - 1.0)
 
@@ -30,7 +31,6 @@ export const THUMBNAIL_QUALITY = 0.85 as const; // JPEG quality (0.0 - 1.0)
  * Comprehensive list of supported image file extensions
  * Includes standard formats (JPEG, PNG, TIFF) and professional RAW formats
  */
-// Accepted image types
 export const ACCEPTED_IMAGE_TYPES = [
   '.jpeg', '.jpg', '.png', '.tiff', '.tif',  // Standard formats
   '.cr2', '.cr3', '.nef', '.arw', '.orf',    // Canon, Nikon, Sony, Olympus RAW
@@ -42,8 +42,7 @@ export const ACCEPTED_IMAGE_TYPES = [
  * Result object for a single thumbnail generation
  */
 export interface ThumbnailResult {
-  size: 'small' | 'medium' | 'large';
-  maxDimension: number;
+  size: ThumbnailSize;
   file: File;
   width: number;
   height: number;
@@ -79,9 +78,9 @@ export async function generateThumbnails(
   try {
     // Generate all three thumbnail sizes in parallel
     const [small, medium, large] = await Promise.all([
-      generateSingleThumbnail(img, THUMBNAIL_SIZES.SMALL, 'small', filename),
-      generateSingleThumbnail(img, THUMBNAIL_SIZES.MEDIUM, 'medium', filename),
-      generateSingleThumbnail(img, THUMBNAIL_SIZES.LARGE, 'large', filename),
+      generateSingleThumbnail(img, THUMBNAIL_SIZES.SMALL, filename),
+      generateSingleThumbnail(img, THUMBNAIL_SIZES.MEDIUM, filename),
+      generateSingleThumbnail(img, THUMBNAIL_SIZES.LARGE, filename),
     ]);
 
     return { small, medium, large };
@@ -92,19 +91,20 @@ export async function generateThumbnails(
 }
 
 /**
- * Generate a single thumbnail at the specified maximum dimension
+ * Generate a single thumbnail at the specified size
  * @param img - The loaded image element to thumbnail
- * @param maxDimension - Maximum width or height for the thumbnail
- * @param size - Size category for filename generation
+ * @param size - Size object which determines the maximum dimension
  * @param filename - Base filename for the thumbnail
  * @returns Promise resolving to thumbnail result with dimensions and file
  */
 async function generateSingleThumbnail(
   img: HTMLImageElement,
-  maxDimension: number,
-  size: 'small' | 'medium' | 'large',
+  size: ThumbnailSize,
   filename: string
 ): Promise<ThumbnailResult> {
+  // Get the maximum dimension from the size object
+  const maxDimension = size.value;
+  
   // Calculate new dimensions while maintaining aspect ratio
   const { width, height } = calculateThumbnailDimensions(
     img.naturalWidth,
@@ -144,14 +144,13 @@ async function generateSingleThumbnail(
   });
 
   // Create file with appropriate naming
-  const thumbnailFilename = `${filename}_${size}.jpg`;
+  const thumbnailFilename = `${filename}_${size.name.toLowerCase()}.jpg`;
   const thumbnailFile = new File([blob], thumbnailFilename, {
     type: THUMBNAIL_FORMAT,
   });
 
   return {
     size,
-    maxDimension,
     file: thumbnailFile,
     width,
     height,

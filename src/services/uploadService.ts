@@ -7,9 +7,9 @@
  * @version 1.0.0
  */
 
-import { uploadPrivateOriginal } from '@/services/s3Service';
-import { createImage, CreateImageInput } from '@/services/dbService';
-import { getImageDimensions, isValidImageType, generateImageFileName } from '@/utils/imageUtils';
+import { uploadPrivateOriginal, uploadPrivateThumbnail } from '@/services/s3Service';
+import { createImage, CreateImageInput, createThumbnail, CreateThumbnailInput } from '@/services/dbService';
+import { getImageDimensions, isValidImageType, generateImageFileName, generateThumbnails, THUMBNAIL_SIZES } from '@/utils/imageUtils';
 
 /**
  * Metadata associated with file uploads
@@ -31,6 +31,11 @@ export interface UploadResult {
   title: string;
   tags: string[];
   dimensions: { width: number; height: number };
+  thumbnails: {
+    small: { s3Key: string; dbId?: string };
+    medium: { s3Key: string; dbId?: string };
+    large: { s3Key: string; dbId?: string };
+  };
 }
 
 /**
@@ -57,7 +62,13 @@ export interface BatchUploadResult {
  */
 export class UploadService {
   /**
-   * Process multiple file uploads with their metadata
+   * Process multiple file uploads with their metadata including thumbnail generation
+   * Each file upload is processed atomically - complete success or complete failure with rollback
+   * @param files - Array of image files to upload
+   * @param fileMetadata - Array of metadata objects corresponding to each file (can be sparse)
+   * @param batchMetadata - Optional object containing per-file metadata keyed by filename
+   * @returns Promise resolving to batch upload results with success/failure counts and detailed results
+   * @throws Error if critical batch processing fails (individual file failures are captured in results)
    */
   async processImageUploads(
     files: File[], 
@@ -109,6 +120,8 @@ export class UploadService {
   private async processSingleFile(file: File, metadata: FileMetadata = {}): Promise<UploadResult> {
     let s3Key: string | null = null;
     let dbRecordId: string | null = null;
+    let thumbnailS3Keys: { small?: string; medium?: string; large?: string } = {};
+    let thumbnailDbIds: { small?: string; medium?: string; large?: string } = {};
 
     try {
       // Validate file type using centralized utility
@@ -119,7 +132,7 @@ export class UploadService {
       // Generate unique filename with UUID and preserve extension
       const fileName = generateImageFileName(file.name);
       
-      // Step 1: Upload to S3 first (can be easily rolled back)
+      // Step 1: Upload original to S3 first (can be easily rolled back)
       s3Key = await uploadPrivateOriginal(file, fileName);
 
       // Step 2: Get image dimensions using centralized utility
@@ -130,7 +143,7 @@ export class UploadService {
       const description = metadata.description || '';
       const tags = this.parseTags(metadata.tags);
 
-      // Step 4: Save to database (point of no return)
+      // Step 4: Save original image to database
       const imageData: CreateImageInput = {
         title,
         description,
@@ -143,20 +156,77 @@ export class UploadService {
       const dbResult = await createImage(imageData);
       dbRecordId = dbResult?.id || null;
 
-      // Success - return result
+      if (!dbRecordId) {
+        throw new Error('Failed to create database record for image');
+      }
+
+      // Step 5: Generate thumbnails
+      const baseFilename = fileName.replace(/\.[^/.]+$/, ''); // Remove extension for thumbnail naming
+      const thumbnailResults = await generateThumbnails(file, baseFilename);
+
+      // Step 6: Upload thumbnails to S3
+      const [smallS3Key, mediumS3Key, largeS3Key] = await Promise.all([
+        uploadPrivateThumbnail(thumbnailResults.small.file, thumbnailResults.small.file.name),
+        uploadPrivateThumbnail(thumbnailResults.medium.file, thumbnailResults.medium.file.name),
+        uploadPrivateThumbnail(thumbnailResults.large.file, thumbnailResults.large.file.name),
+      ]);
+
+      thumbnailS3Keys = {
+        small: smallS3Key,
+        medium: mediumS3Key,
+        large: largeS3Key
+      };
+
+      // Step 7: Create thumbnail database records
+      const smallThumbnailData: CreateThumbnailInput = {
+        imageId: dbRecordId,
+        s3Key: smallS3Key,
+        size: THUMBNAIL_SIZES.SMALL.name
+      };
+
+      const mediumThumbnailData: CreateThumbnailInput = {
+        imageId: dbRecordId,
+        s3Key: mediumS3Key,
+        size: THUMBNAIL_SIZES.MEDIUM.name
+      };
+
+      const largeThumbnailData: CreateThumbnailInput = {
+        imageId: dbRecordId,
+        s3Key: largeS3Key,
+        size: THUMBNAIL_SIZES.LARGE.name
+      };
+
+      const [smallDbResult, mediumDbResult, largeDbResult] = await Promise.all([
+        createThumbnail(smallThumbnailData),
+        createThumbnail(mediumThumbnailData),
+        createThumbnail(largeThumbnailData)
+      ]);
+
+      thumbnailDbIds = {
+        small: smallDbResult?.id || undefined,
+        medium: mediumDbResult?.id || undefined,
+        large: largeDbResult?.id || undefined
+      };
+
+      // Success - return complete result
       return {
         success: true,
         fileName: file.name,
         s3Key,
-        imageId: dbRecordId || undefined,
+        imageId: dbRecordId,
         title,
         tags,
-        dimensions
+        dimensions,
+        thumbnails: {
+          small: { s3Key: smallS3Key, dbId: thumbnailDbIds.small },
+          medium: { s3Key: mediumS3Key, dbId: thumbnailDbIds.medium },
+          large: { s3Key: largeS3Key, dbId: thumbnailDbIds.large }
+        }
       };
 
     } catch (error) {
       // Rollback logic: clean up any successful operations
-      await this.rollbackFileUpload(s3Key, dbRecordId);
+      await this.rollbackFileUpload(s3Key, dbRecordId, thumbnailS3Keys, thumbnailDbIds);
       
       // Re-throw the original error
       throw error;
@@ -164,25 +234,44 @@ export class UploadService {
   }
 
   /**
-   * Rollback partial uploads by cleaning up S3 and DB records
-   * @param s3Key - The S3 key to delete (if upload succeeded)
-   * @param dbRecordId - The database record ID to delete (if creation succeeded)
+   * Rollback partial uploads by cleaning up S3 and DB records including thumbnails
+   * @param s3Key - The original image S3 key to delete (if upload succeeded)
+   * @param dbRecordId - The original image database record ID to delete (if creation succeeded)
+   * @param thumbnailS3Keys - Object containing thumbnail S3 keys to delete
+   * @param thumbnailDbIds - Object containing thumbnail database IDs to delete
    * @returns Promise that resolves when cleanup is complete
    */
-  private async rollbackFileUpload(s3Key: string | null, dbRecordId: string | null): Promise<void> {
+  private async rollbackFileUpload(
+    s3Key: string | null, 
+    dbRecordId: string | null,
+    thumbnailS3Keys: { small?: string; medium?: string; large?: string } = {},
+    thumbnailDbIds: { small?: string; medium?: string; large?: string } = {}
+  ): Promise<void> {
     const cleanupPromises: Promise<void>[] = [];
 
-    // If S3 upload succeeded but DB failed, delete from S3
-    if (s3Key && !dbRecordId) {
+    // Clean up original image S3 file if it was uploaded
+    if (s3Key) {
       cleanupPromises.push(this.deleteS3File(s3Key));
     }
 
-    // If both succeeded but something else failed, clean up both
-    // (Note: In our current flow this shouldn't happen, but good for future-proofing)
-    if (s3Key && dbRecordId) {
-      cleanupPromises.push(this.deleteS3File(s3Key));
+    // Clean up original image database record if it was created
+    if (dbRecordId) {
       cleanupPromises.push(this.deleteDbRecord(dbRecordId));
     }
+
+    // Clean up thumbnail S3 files
+    Object.values(thumbnailS3Keys).forEach(thumbnailS3Key => {
+      if (thumbnailS3Key) {
+        cleanupPromises.push(this.deleteS3File(thumbnailS3Key));
+      }
+    });
+
+    // Clean up thumbnail database records
+    Object.values(thumbnailDbIds).forEach(thumbnailDbId => {
+      if (thumbnailDbId) {
+        cleanupPromises.push(this.deleteThumbnailRecord(thumbnailDbId));
+      }
+    });
 
     // Execute cleanup operations in parallel, but don't fail if cleanup fails
     if (cleanupPromises.length > 0) {
@@ -193,6 +282,8 @@ export class UploadService {
         console.error('Rollback failed - manual cleanup may be required:', {
           s3Key,
           dbRecordId,
+          thumbnailS3Keys,
+          thumbnailDbIds,
           error: rollbackError
         });
       }
@@ -229,6 +320,23 @@ export class UploadService {
       console.log(`Rollback: Deleted DB record ${recordId}`);
     } catch (error) {
       console.error(`Failed to delete DB record during rollback: ${recordId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete thumbnail record from database (used for rollback operations)
+   * @param thumbnailId - The thumbnail database record ID to delete
+   * @returns Promise that resolves when record is deleted
+   * @throws Error if deletion fails
+   */
+  private async deleteThumbnailRecord(thumbnailId: string): Promise<void> {
+    try {
+      const { deleteThumbnail } = await import('@/services/dbService');
+      await deleteThumbnail(thumbnailId);
+      console.log(`Rollback: Deleted thumbnail DB record ${thumbnailId}`);
+    } catch (error) {
+      console.error(`Failed to delete thumbnail DB record during rollback: ${thumbnailId}`, error);
       throw error;
     }
   }

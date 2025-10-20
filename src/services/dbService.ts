@@ -9,6 +9,7 @@
 
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../amplify/data/resource';
+import type { ThumbnailSize } from '../utils/imageUtils';
 
 // Generate the typed client
 const client = generateClient<Schema>();
@@ -285,7 +286,7 @@ export const deleteEdited = async (id: string) => {
 export interface CreateThumbnailInput {
   imageId: string;
   s3Key: string;
-  size?: 'small' | 'medium' | 'large';
+  size?: 'SMALL' | 'MEDIUM' | 'LARGE'; // Database enum constraint
 }
 
 /**
