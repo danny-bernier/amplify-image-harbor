@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { listImages } from '@/services/dbService';
+import { listImages, getSmallThumbnailsForImages, getThumbnailBySize } from '@/services/dbService';
 import { getFileUrl } from '@/services/s3Service';
 
 interface GalleryImage {
@@ -16,6 +16,10 @@ interface GalleryImage {
   tags: string[] | null | undefined;
   created: string | null | undefined;
   lastUpdated: string | null | undefined;
+  smallThumbnail: { s3Key: string; url: string } | null;
+  // Medium and large thumbnails loaded on-demand
+  mediumThumbnail?: { s3Key: string; url: string } | null;
+  largeThumbnail?: { s3Key: string; url: string } | null;
 }
 
 export default function Gallery() {
@@ -25,6 +29,7 @@ export default function Gallery() {
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [isInspectorExpanded, setIsInspectorExpanded] = useState(false);
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
+  const [loadingThumbnails, setLoadingThumbnails] = useState<Record<string, boolean>>({});
 
   // Helper function to format dates
   const formatDate = (dateString: string | null | undefined) => {
@@ -42,80 +47,136 @@ export default function Gallery() {
     }
   };
 
-  // Fullscreen Modal Component
-  const FullscreenModal = ({ image }: { image: GalleryImage }) => (
-    <div className="fullscreen-modal" onClick={() => setIsFullscreenOpen(false)}>
-      <div className="fullscreen-content" onClick={(e) => e.stopPropagation()}>
-        <button 
-          onClick={() => setIsFullscreenOpen(false)}
-          className="fullscreen-close-btn"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-        
-        <Image
-          src={image.url}
-          alt={image.description || image.title || 'Fullscreen image'}
-          width={image.width}
-          height={image.height}
-          className="fullscreen-image"
-          unoptimized
-        />
-      </div>
-    </div>
-  );
+  // Load medium or large thumbnail on demand
+  const loadThumbnailOnDemand = async (imageId: string, size: 'MEDIUM' | 'LARGE') => {
+    const cacheKey = `${imageId}-${size}`;
+    if (loadingThumbnails[cacheKey]) return; // Already loading
 
-  // Inspector Pane Component
-  const ImageInspector = ({ image }: { image: GalleryImage }) => (
-    <div className={`inspector-panel ${isInspectorExpanded ? 'expanded' : ''}`}>
-      <div className="inspector-header">
-        <h2 className="heading-secondary">{image.title || 'Untitled Image'}</h2>
-        <div className="flex items-center gap-2">
-          {/* Expand/Collapse Arrow - only show in bottom panel mode */}
+    try {
+      console.log(`Loading ${size} thumbnail on-demand for image ${imageId}...`);
+      setLoadingThumbnails(prev => ({ ...prev, [cacheKey]: true }));
+      
+      const thumbnailData = await getThumbnailBySize(imageId, size);
+      if (thumbnailData) {
+        const thumbnailUrl = await getFileUrl(thumbnailData.s3Key);
+        console.log(`Successfully loaded ${size} thumbnail for image ${imageId}`);
+        
+        // Update the specific image with the loaded thumbnail
+        setImages(prevImages => 
+          prevImages.map(img => {
+            if (img.id === imageId) {
+              const updatedImg = { ...img };
+              if (size === 'MEDIUM') {
+                updatedImg.mediumThumbnail = { s3Key: thumbnailData.s3Key, url: thumbnailUrl };
+              } else {
+                updatedImg.largeThumbnail = { s3Key: thumbnailData.s3Key, url: thumbnailUrl };
+              }
+              return updatedImg;
+            }
+            return img;
+          })
+        );
+      } else {
+        console.warn(`No ${size} thumbnail found for image ${imageId}`);
+      }
+    } catch (error) {
+      console.warn(`Failed to load ${size} thumbnail for image ${imageId}:`, error);
+    } finally {
+      setLoadingThumbnails(prev => ({ ...prev, [cacheKey]: false }));
+    }
+  };
+
+  // Fullscreen Modal Component
+  const FullscreenModal = ({ image }: { image: GalleryImage }) => {
+    // Load large thumbnail when fullscreen opens
+    useEffect(() => {
+      if (!image.largeThumbnail) {
+        loadThumbnailOnDemand(image.id, 'LARGE');
+      }
+    }, [image.id]);
+
+    return (
+      <div className="fullscreen-modal" onClick={() => setIsFullscreenOpen(false)}>
+        <div className="fullscreen-content" onClick={(e) => e.stopPropagation()}>
           <button 
-            onClick={() => setIsInspectorExpanded(!isInspectorExpanded)}
-            className="inspector-expand-btn lg:landscape:hidden"
-            title={isInspectorExpanded ? 'Collapse panel' : 'Expand panel'}
+            onClick={() => setIsFullscreenOpen(false)}
+            className="fullscreen-close-btn"
           >
-            <svg 
-              className={`w-5 h-5 transition-transform duration-200 ${isInspectorExpanded ? 'rotate-180' : ''}`} 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-            </svg>
-          </button>
-          
-          <button 
-            onClick={() => {
-              setSelectedImage(null);
-              setIsInspectorExpanded(false);
-            }}
-            className="inspector-close-btn"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-        </div>
-      </div>
-      
-      <div className="inspector-content-wrapper">
-        {/* Image Preview - takes most space */}
-        <div className="inspector-image-container">
+          
           <Image
-            src={image.url}
-            alt={image.description || image.title || 'Image preview'}
+            src={image.largeThumbnail?.url || image.url}
+            alt={image.description || image.title || 'Fullscreen image'}
             width={image.width}
             height={image.height}
-            className={`inspector-image ${!isInspectorExpanded ? 'cursor-pointer' : ''}`}
-            onClick={!isInspectorExpanded ? () => setIsFullscreenOpen(true) : undefined}
+            className="fullscreen-image"
             unoptimized
           />
         </div>
+      </div>
+    );
+  };
+
+  // Inspector Pane Component
+  const ImageInspector = ({ image }: { image: GalleryImage }) => {
+    // Load medium thumbnail when inspector opens
+    useEffect(() => {
+      if (!image.mediumThumbnail) {
+        loadThumbnailOnDemand(image.id, 'MEDIUM');
+      }
+    }, [image.id]);
+
+    return (
+      <div className={`inspector-panel ${isInspectorExpanded ? 'expanded' : ''}`}>
+        <div className="inspector-header">
+          <h2 className="heading-secondary">{image.title || 'Untitled Image'}</h2>
+          <div className="flex items-center gap-2">
+            {/* Expand/Collapse Arrow - only show in bottom panel mode */}
+            <button 
+              onClick={() => setIsInspectorExpanded(!isInspectorExpanded)}
+              className="inspector-expand-btn lg:landscape:hidden"
+              title={isInspectorExpanded ? 'Collapse panel' : 'Expand panel'}
+            >
+              <svg 
+                className={`w-5 h-5 transition-transform duration-200 ${isInspectorExpanded ? 'rotate-180' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
+            </button>
+            
+            <button 
+              onClick={() => {
+                setSelectedImage(null);
+                setIsInspectorExpanded(false);
+              }}
+              className="inspector-close-btn"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <div className="inspector-content-wrapper">
+          {/* Image Preview - takes most space */}
+          <div className="inspector-image-container">
+            <Image
+              src={image.mediumThumbnail?.url || image.url}
+              alt={image.description || image.title || 'Image preview'}
+              width={image.width}
+              height={image.height}
+              className={`inspector-image ${!isInspectorExpanded ? 'cursor-pointer' : ''}`}
+              onClick={!isInspectorExpanded ? () => setIsFullscreenOpen(true) : undefined}
+              unoptimized
+            />
+          </div>
         
         {/* Description - fixed space below image, only in collapsed mode */}
         {!isInspectorExpanded && image.description && (
@@ -189,6 +250,7 @@ export default function Gallery() {
       </div>
     </div>
   );
+};
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -198,11 +260,31 @@ export default function Gallery() {
         // Fetch images from database
         const imageData = await listImages(50); // Limit to 50 for now TODO: pagination or auto-load on scroll etc...
         
-        // Get signed URLs for each image
+        // Get only small thumbnails for all images in one batch call (for gallery grid)
+        const imageIds = imageData.map(img => img.id);
+        console.log(`Loading small thumbnails for ${imageIds.length} images...`);
+        const smallThumbnailsByImage = await getSmallThumbnailsForImages(imageIds);
+        console.log(`Loaded ${Object.keys(smallThumbnailsByImage).length} small thumbnails`);
+        
+        // Get signed URLs for each image and their small thumbnails
         const imagesWithUrls = await Promise.all(
           imageData.map(async (img) => {
             try {
+              // Get original image URL
               const url = await getFileUrl(img.s3Key);
+              
+              // Get small thumbnail for this image from the batch result
+              const smallThumbnailData = smallThumbnailsByImage[img.id] || null;
+              
+              // Get URL for small thumbnail if available
+              const smallThumbnail = smallThumbnailData ? {
+                s3Key: smallThumbnailData.s3Key,
+                url: await getFileUrl(smallThumbnailData.s3Key).catch((err) => {
+                  console.warn(`Failed to get small thumbnail URL for ${img.title}:`, err);
+                  return '';
+                })
+              } : null;
+              
               return {
                 id: img.id,
                 title: img.title,
@@ -214,6 +296,7 @@ export default function Gallery() {
                 tags: img.tags,
                 created: img.created,
                 lastUpdated: img.lastUpdated,
+                smallThumbnail,
               };
             } catch (urlError) {
               console.error(`Failed to get URL for ${img.s3Key}:`, urlError);
@@ -303,7 +386,7 @@ export default function Gallery() {
               }}
             >
               <Image
-                src={image.url}
+                src={image.smallThumbnail?.url || image.url}
                 alt={image.description || image.title || 'Uploaded image'}
                 width={150}
                 height={150}

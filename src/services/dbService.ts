@@ -343,7 +343,7 @@ export const getThumbnail = async (id: string) => {
  * @returns Promise resolving to the thumbnail record or null if not found
  * @throws Error if retrieval fails
  */
-export const getThumbnailBySize = async (imageId: string, size: 'small' | 'medium' | 'large') => {
+export const getThumbnailBySize = async (imageId: string, size: 'SMALL' | 'MEDIUM' | 'LARGE') => {
   try {
     const result = await client.models.Thumbnail.list({
       filter: {
@@ -389,6 +389,42 @@ export const updateThumbnail = async (id: string, updates: Partial<CreateThumbna
     return result.data;
   } catch (error) {
     console.error('Error updating thumbnail:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get small thumbnails for multiple images at once (optimized for gallery grid loading)
+ * @param imageIds - Array of image IDs to get small thumbnails for
+ * @returns Promise resolving to small thumbnails grouped by imageId
+ * @throws Error if retrieval fails
+ */
+export const getSmallThumbnailsForImages = async (imageIds: string[]) => {
+  try {
+    // Get all small thumbnails (we'll filter client-side since 'in' filter may not be available)
+    const result = await client.models.Thumbnail.list({
+      filter: {
+        size: {
+          eq: 'SMALL'
+        }
+      }
+    });
+    
+    if (result.errors) {
+      throw new Error(`Failed to get small thumbnails for images: ${result.errors.map(e => e.message).join(', ')}`);
+    }
+    
+    // Group small thumbnails by imageId for easy lookup, filtering for requested images
+    const smallThumbnailsByImage: Record<string, any> = {};
+    result.data.forEach(thumbnail => {
+      if (thumbnail.imageId && imageIds.includes(thumbnail.imageId)) {
+        smallThumbnailsByImage[thumbnail.imageId] = thumbnail;
+      }
+    });
+    
+    return smallThumbnailsByImage;
+  } catch (error) {
+    console.error('Error getting small thumbnails for images:', error);
     throw error;
   }
 };
