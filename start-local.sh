@@ -44,7 +44,7 @@ start "Amplify Sandbox" "C:\Program Files\Git\bin\bash.exe" -c "cd '$CURRENT_DIR
 echo "Waiting for sandbox to deploy and checking status..."
 sandbox_running=false
 
-for i in {1..120}; do
+for i in {1..300}; do
     # Method 1: Check if amplify_outputs.json was recently created/modified (best indicator sandbox is working)
     if [ -f "amplify_outputs.json" ] && [ $(find amplify_outputs.json -mmin -1 2>/dev/null | wc -l) -gt 0 ]; then
         sandbox_running=true
@@ -69,7 +69,7 @@ for i in {1..120}; do
         break
     fi
 
-    echo "Waiting for sandbox deployment... $i seconds (timeout in 120s)"
+    echo "Waiting for sandbox deployment... $i seconds (timeout in 300s or 5 minutes)"
     sleep 1
 done
 
@@ -94,18 +94,32 @@ fi
 echo "Waiting for frontend to start up..."
 sleep 5
 
-# Open Chrome to localhost:3000
-echo "Opening Chrome to localhost:3000..."
+# Open Chrome to localhost:3000 in a new window, then open AWS AppSync console in a new tab
+echo "Opening Chrome with localhost:3000 in new window and AWS AppSync console in new tab..."
 if command -v chrome.exe >/dev/null 2>&1; then
-    chrome.exe http://localhost:3000 &
+    # Open localhost in a new window
+    chrome.exe --new-window http://localhost:3000 &
+    sleep 2
+    # Open AWS AppSync console in a new tab of the same window
+    chrome.exe --new-tab https://console.aws.amazon.com/appsync/ &
 elif [ -f "/c/Program Files/Google/Chrome/Application/chrome.exe" ]; then
-    "/c/Program Files/Google/Chrome/Application/chrome.exe" http://localhost:3000 &
+    # Open localhost in a new window
+    "/c/Program Files/Google/Chrome/Application/chrome.exe" --new-window http://localhost:3000 &
+    sleep 2
+    # Open AWS AppSync console in a new tab of the same window
+    "/c/Program Files/Google/Chrome/Application/chrome.exe" --new-tab https://console.aws.amazon.com/appsync/ &
 elif [ -f "/c/Program Files (x86)/Google/Chrome/Application/chrome.exe" ]; then
-    "/c/Program Files (x86)/Google/Chrome/Application/chrome.exe" http://localhost:3000 &
+    # Open localhost in a new window
+    "/c/Program Files (x86)/Google/Chrome/Application/chrome.exe" --new-window http://localhost:3000 &
+    sleep 2
+    # Open AWS AppSync console in a new tab of the same window
+    "/c/Program Files (x86)/Google/Chrome/Application/chrome.exe" --new-tab https://console.aws.amazon.com/appsync/ &
 else
     # Fallback: use Windows start command to open default browser
     echo "Chrome not found, opening in default browser..."
     cmd.exe /c start http://localhost:3000
+    sleep 2
+    cmd.exe /c start https://console.aws.amazon.com/appsync/
 fi
 
-echo "Done. Both services should be running in separate terminals."
+echo "Done. Both Sandbox and React services should be running."
