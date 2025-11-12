@@ -61,31 +61,29 @@ export default function Gallery() {
       log.devDebug(`Loading ${size} thumbnail on-demand for image ${imageId}...`);
       setLoadingThumbnails(prev => ({ ...prev, [cacheKey]: true }));
       
-      // Get authentication token
+      // Ensure user is authenticated
       const session = await fetchAuthSession();
-      const authToken = session.tokens?.accessToken?.toString();
-      
-      if (!authToken) {
+      if (!session.tokens?.accessToken) {
         throw new Error('User not authenticated');
       }
 
-      // Call API to get thumbnail URL
-      const response = await fetch(`/api/thumbnails/${imageId}?size=${size}`, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      });
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          log.devWarn(`No ${size} thumbnail found for image ${imageId}`);
-          return;
-        }
-        throw new Error(`Failed to fetch thumbnail: ${response.status}`);
+      // Use direct database service to get thumbnail
+      const thumbnailRecord = await getThumbnailBySize(imageId, size);
+      
+      if (!thumbnailRecord) {
+        log.devWarn(`No ${size} thumbnail found for image ${imageId}`);
+        return;
       }
 
-      const thumbnailData = await response.json();
-      log.devDebug(`Successfully loaded ${size} thumbnail for image ${imageId}`);
+      // Generate signed URL for the thumbnail
+      const thumbnailUrl = await getFileUrl(thumbnailRecord.s3Key);
+      
+      const thumbnailData = {
+        s3Key: thumbnailRecord.s3Key,
+        url: thumbnailUrl
+      };
+      
+      log.devDebug(`Successfully loaded ${size} thumbnail for image ${imageId} via direct service calls`);
       
       // Update the specific image with the loaded thumbnail
       setImages(prevImages => 
@@ -280,31 +278,64 @@ export default function Gallery() {
       try {
         setLoading(true);
         
-        // Get authentication token
+        // Get authentication session to ensure user is authenticated
+        log.devDebug('Fetching auth session...');
         const session = await fetchAuthSession();
-        const authToken = session.tokens?.accessToken?.toString();
+        log.devDebug('Auth session:', { hasTokens: !!session.tokens });
         
-        if (!authToken) {
+        if (!session.tokens?.accessToken) {
+          log.error('No auth token found in session');
           setError('User not authenticated');
           return;
         }
+        
+        log.devDebug('User authenticated, fetching images directly from database...');
 
-        // Call API to get images with URLs
-        const response = await fetch('/api/images?limit=50', {
-          headers: {
-            'Authorization': `Bearer ${authToken}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch images: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setImages(data.images || []);
+        // Use direct database service call instead of API
+        const dbImages = await listImages(50);
+        log.devDebug('Database images fetched:', { count: dbImages.length });
+        
+        // Convert database images to gallery format with URLs
+        const galleryImages: GalleryImage[] = await Promise.all(
+          dbImages.map(async (dbImage) => {
+            // Generate signed URL for original image
+            const imageUrl = await getFileUrl(dbImage.s3Key);
+            
+            // Try to get small thumbnail for each image
+            let smallThumbnail: { s3Key: string; url: string } | null = null;
+            try {
+              const thumbnailRecord = await getThumbnailBySize(dbImage.id, 'SMALL');
+              if (thumbnailRecord) {
+                const thumbnailUrl = await getFileUrl(thumbnailRecord.s3Key);
+                smallThumbnail = {
+                  s3Key: thumbnailRecord.s3Key,
+                  url: thumbnailUrl
+                };
+              }
+            } catch (error) {
+              log.devWarn(`No small thumbnail found for image ${dbImage.id}:`, error);
+            }
+            
+            return {
+              id: dbImage.id,
+              title: dbImage.title,
+              description: dbImage.description,
+              s3Key: dbImage.s3Key,
+              url: imageUrl,
+              width: dbImage.width,
+              height: dbImage.height,
+              tags: dbImage.tags?.filter(tag => tag !== null) || null,
+              created: dbImage.createdAt,
+              lastUpdated: dbImage.updatedAt,
+              smallThumbnail
+            };
+          })
+        );
+        
+        setImages(galleryImages);
         setError(null);
         
-        log.devDebug(`Loaded ${data.images?.length || 0} images with URLs`);
+        log.devDebug(`Loaded ${galleryImages.length} images with URLs via direct service calls`);
       } catch (err) {
         log.error('Error fetching images:', err);
         setError('Failed to load images. Please try again.');

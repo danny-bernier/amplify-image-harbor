@@ -1,31 +1,11 @@
 /**
- * @fileoverview Image processing utilities for thumbnail generation and file validation
- * Provides comprehensive image processing capabilities including thumbnail generation,
- * dimension calculation, file type validation, and unique filename generation.
+ * @fileoverview Image processing utilities for file validation and image operations
+ * Provides image processing capabilities including dimension calculation, 
+ * file type validation, and unique filename generation.
  * 
- * @author Image Harbor Team
+ * @author Danny Bernier
  * @version 1.0.0
  */
-
-import { randomUUID } from 'crypto';
-
-/**
- * Enhanced thumbnail size enumeration with value and name properties
- */
-export const THUMBNAIL_SIZES = {
-  SMALL: { value: 150, name: 'SMALL' },
-  MEDIUM: { value: 300, name: 'MEDIUM' },
-  LARGE: { value: 1200, name: 'LARGE' }
-} as const;
-
-export type ThumbnailSizeKey = keyof typeof THUMBNAIL_SIZES;
-export type ThumbnailSize = typeof THUMBNAIL_SIZES[ThumbnailSizeKey];
-
-/**
- * Output format for generated thumbnails (JPEG)
- */
-export const THUMBNAIL_FORMAT = 'image/jpeg' as const;
-export const THUMBNAIL_QUALITY = 0.85 as const; // JPEG quality (0.0 - 1.0)
 
 /**
  * Comprehensive list of supported image file extensions
@@ -38,170 +18,6 @@ export const ACCEPTED_IMAGE_TYPES = [
   '.pef', '.srw', '.raf', '.3fr'             // Pentax, Samsung, Fuji, Hasselblad RAW
 ] as const;
 
-/**
- * Result object for a single thumbnail generation
- */
-export interface ThumbnailResult {
-  size: ThumbnailSize;
-  file: File;
-  width: number;
-  height: number;
-}
-
-/**
- * Complete result object containing all three thumbnail sizes
- */
-export interface ThumbnailGenerationResult {
-  small: ThumbnailResult;
-  medium: ThumbnailResult;
-  large: ThumbnailResult;
-}
-
-/**
- * Generate thumbnails for an image file in small, medium, and large sizes
- * @param file - The original image file
- * @param filename - Base filename for the thumbnails (without extension)
- * @returns Promise resolving to thumbnail generation results
- */
-export async function generateThumbnails(
-  file: File, 
-  filename: string
-): Promise<ThumbnailGenerationResult> {
-  // Validate file type
-  if (!isValidImageType(file)) {
-    throw new Error(`Unsupported image type: ${file.type}`);
-  }
-
-  // Create image element to work with
-  const img = await createImageFromFile(file);
-
-  try {
-    // Generate all three thumbnail sizes in parallel
-    const [small, medium, large] = await Promise.all([
-      generateSingleThumbnail(img, THUMBNAIL_SIZES.SMALL, filename),
-      generateSingleThumbnail(img, THUMBNAIL_SIZES.MEDIUM, filename),
-      generateSingleThumbnail(img, THUMBNAIL_SIZES.LARGE, filename),
-    ]);
-
-    return { small, medium, large };
-  } finally {
-    // Clean up the image URL
-    URL.revokeObjectURL(img.src);
-  }
-}
-
-/**
- * Generate a single thumbnail at the specified size
- * @param img - The loaded image element to thumbnail
- * @param size - Size object which determines the maximum dimension
- * @param filename - Base filename for the thumbnail
- * @returns Promise resolving to thumbnail result with dimensions and file
- */
-async function generateSingleThumbnail(
-  img: HTMLImageElement,
-  size: ThumbnailSize,
-  filename: string
-): Promise<ThumbnailResult> {
-  // Get the maximum dimension from the size object
-  const maxDimension = size.value;
-  
-  // Calculate new dimensions while maintaining aspect ratio
-  const { width, height } = calculateThumbnailDimensions(
-    img.naturalWidth,
-    img.naturalHeight,
-    maxDimension
-  );
-
-  // Create canvas and draw resized image
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  
-  if (!ctx) {
-    throw new Error('Failed to get canvas 2D context');
-  }
-
-  canvas.width = width;
-  canvas.height = height;
-
-  // Draw the image with high quality scaling
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(img, 0, 0, width, height);
-
-  // Convert canvas to blob
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Failed to create thumbnail blob'));
-        }
-      },
-      THUMBNAIL_FORMAT,
-      THUMBNAIL_QUALITY
-    );
-  });
-
-  // Create file with appropriate naming
-  const thumbnailFilename = `${filename}_${size.name.toLowerCase()}.jpg`;
-  const thumbnailFile = new File([blob], thumbnailFilename, {
-    type: THUMBNAIL_FORMAT,
-  });
-
-  return {
-    size,
-    file: thumbnailFile,
-    width,
-    height,
-  };
-}
-
-/**
- * Calculate thumbnail dimensions while maintaining aspect ratio
- * @param originalWidth - Original image width in pixels
- * @param originalHeight - Original image height in pixels
- * @param maxDimension - Maximum allowed width or height
- * @returns Object with calculated width and height
- */
-function calculateThumbnailDimensions(
-  originalWidth: number,
-  originalHeight: number,
-  maxDimension: number
-): { width: number; height: number } {
-  // If image is already smaller than max dimension, don't upscale
-  if (originalWidth <= maxDimension && originalHeight <= maxDimension) {
-    return { width: originalWidth, height: originalHeight };
-  }
-
-  // Calculate scale factor to fit within max dimension
-  const scaleFactor = maxDimension / Math.max(originalWidth, originalHeight);
-  
-  return {
-    width: Math.round(originalWidth * scaleFactor),
-    height: Math.round(originalHeight * scaleFactor),
-  };
-}
-
-/**
- * Create an HTMLImageElement from a File object
- * @param file - The image file to load
- * @returns Promise resolving to loaded image element
- * @throws Error if image fails to load
- */
-function createImageFromFile(file: File): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    
-    img.onload = () => resolve(img);
-    img.onerror = () => {
-      URL.revokeObjectURL(img.src);
-      reject(new Error('Failed to load image for thumbnail generation'));
-    };
-    
-    img.src = URL.createObjectURL(file);
-  });
-}
 
 /**
  * Generate a unique filename for S3 storage using UUID and preserving extension
@@ -211,7 +27,9 @@ function createImageFromFile(file: File): Promise<HTMLImageElement> {
 export function generateImageFileName(originalFilename: string): string {
   const lastDotIndex = originalFilename.lastIndexOf('.');
   const fileExtension = lastDotIndex > 0 ? originalFilename.substring(lastDotIndex + 1) : '';
-  const uuid = randomUUID();
+  
+  // Use browser's crypto API for UUID generation
+  const uuid = crypto.randomUUID();
   return fileExtension ? `${uuid}.${fileExtension}` : uuid;
 }
 
@@ -228,7 +46,7 @@ export function isValidImageType(file: File): boolean {
   // Get file extension from filename
   const fileName = file.name.toLowerCase();
   const extension = fileName.substring(fileName.lastIndexOf('.'));
-  
+
   // Check if extension is in accepted types
   return ACCEPTED_IMAGE_TYPES.includes(extension as any);
 }
@@ -241,7 +59,7 @@ export function isValidImageType(file: File): boolean {
  */
 export async function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
   const img = await createImageFromFile(file);
-  
+
   try {
     return {
       width: img.naturalWidth,
@@ -250,4 +68,24 @@ export async function getImageDimensions(file: File): Promise<{ width: number; h
   } finally {
     URL.revokeObjectURL(img.src);
   }
+}
+
+/**
+ * Create an HTMLImageElement from a File object
+ * @param file - The image file to load
+ * @returns Promise resolving to loaded image element
+ * @throws Error if image fails to load
+ */
+function createImageFromFile(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+
+    img.onload = () => resolve(img);
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src);
+      reject(new Error('Failed to load image'));
+    };
+
+    img.src = URL.createObjectURL(file);
+  });
 }

@@ -3,13 +3,19 @@
  * Provides business logic for file uploads including validation, S3 storage, database
  * persistence, and automatic rollback on failures.
  * 
- * @author Image Harbor Team
+ * @author Danny Bernier
  * @version 1.0.0
  */
 
-import { uploadPrivateOriginal, uploadPrivateThumbnail } from '@/services/s3Service';
-import { createImage, CreateImageInput, createThumbnail, CreateThumbnailInput } from '@/services/dbService';
-import { getImageDimensions, isValidImageType, generateImageFileName, generateThumbnails, THUMBNAIL_SIZES } from '@/utils/imageUtils';
+import { uploadPrivateOriginal, uploadPrivateThumbnail, deleteFile } from '@/services/s3Service';
+import { createImage, CreateImageInput, createThumbnail, CreateThumbnailInput, deleteImage, deleteThumbnail } from '@/services/dbService';
+import { getImageDimensions, isValidImageType, generateImageFileName } from '@/utils/imageUtils';
+import { generateThumbnails } from '@/utils/thumbnailUtils';
+import { THUMBNAIL_SIZES } from '@/types/thumbnail';
+import { logger } from '@/utils/logger';
+
+// Create component-specific logger
+const log = logger.forComponent('Upload Service');
 
 /**
  * Metadata associated with file uploads
@@ -62,7 +68,7 @@ export interface BatchUploadResult {
  */
 export class UploadService {
   /**
-   * Process multiple file uploads with their metadata including thumbnail generation
+   * Process batch uploads for images with atomic operations and automatic rollback
    * Each file upload is processed atomically - complete success or complete failure with rollback
    * @param files - Array of image files to upload
    * @param fileMetadata - Array of metadata objects corresponding to each file (can be sparse)
@@ -71,8 +77,8 @@ export class UploadService {
    * @throws Error if critical batch processing fails (individual file failures are captured in results)
    */
   async processImageUploads(
-    files: File[], 
-    fileMetadata: FileMetadata[], 
+    files: File[],
+    fileMetadata: FileMetadata[],
     batchMetadata: Record<string, any> = {}
   ): Promise<BatchUploadResult> {
     const results: UploadResult[] = [];
@@ -82,7 +88,7 @@ export class UploadService {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       let metadata = fileMetadata[i] || {};
-      
+
       // If batch metadata includes per-file data, merge it
       if (batchMetadata[file.name]) {
         metadata = { ...metadata, ...batchMetadata[file.name] };
@@ -92,12 +98,13 @@ export class UploadService {
         const result = await this.processSingleFile(file, metadata);
         results.push(result);
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         const errorInfo: UploadError = {
           fileName: file.name,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: errorMessage
         };
         errors.push(errorInfo);
-        console.error(`Upload failed for ${file.name}:`, error);
+        log.error(`Upload failed for ${file.name}:`, errorMessage);
       }
     }
 
@@ -117,21 +124,25 @@ export class UploadService {
    * @returns Promise resolving to upload result
    * @throws Error if upload fails after rollback
    */
-  private async processSingleFile(file: File, metadata: FileMetadata = {}): Promise<UploadResult> {
+  private async processSingleFile(
+    file: File,
+    metadata: FileMetadata = {}
+  ): Promise<UploadResult> {
     let s3Key: string | null = null;
     let dbRecordId: string | null = null;
     let thumbnailS3Keys: { small?: string; medium?: string; large?: string } = {};
     let thumbnailDbIds: { small?: string; medium?: string; large?: string } = {};
 
     try {
+      log.devDebug(`Processing file ${file.name} for client-side upload`);
+
       // Validate file type using centralized utility
       if (!isValidImageType(file)) {
         throw new Error(`File ${file.name}: Unsupported image type. Supported formats include JPEG, PNG, TIFF, and various RAW formats.`);
       }
-
       // Generate unique filename with UUID and preserve extension
       const fileName = generateImageFileName(file.name);
-      
+
       // Step 1: Upload original to S3 first (can be easily rolled back)
       s3Key = await uploadPrivateOriginal(file, fileName);
 
@@ -227,7 +238,7 @@ export class UploadService {
     } catch (error) {
       // Rollback logic: clean up any successful operations
       await this.rollbackFileUpload(s3Key, dbRecordId, thumbnailS3Keys, thumbnailDbIds);
-      
+
       // Re-throw the original error
       throw error;
     }
@@ -242,7 +253,7 @@ export class UploadService {
    * @returns Promise that resolves when cleanup is complete
    */
   private async rollbackFileUpload(
-    s3Key: string | null, 
+    s3Key: string | null,
     dbRecordId: string | null,
     thumbnailS3Keys: { small?: string; medium?: string; large?: string } = {},
     thumbnailDbIds: { small?: string; medium?: string; large?: string } = {}
@@ -277,9 +288,9 @@ export class UploadService {
     if (cleanupPromises.length > 0) {
       try {
         await Promise.allSettled(cleanupPromises);
-        console.log('Rollback completed successfully');
+        log.info('Rollback completed successfully');
       } catch (rollbackError) {
-        console.error('Rollback failed - manual cleanup may be required:', {
+        log.error('Rollback failed - manual cleanup may be required:', {
           s3Key,
           dbRecordId,
           thumbnailS3Keys,
@@ -298,11 +309,10 @@ export class UploadService {
    */
   private async deleteS3File(s3Key: string): Promise<void> {
     try {
-      const { deleteFile } = await import('@/services/s3Service');
       await deleteFile(s3Key);
-      console.log(`Rollback: Deleted S3 file ${s3Key}`);
+      log.info(`Rollback: Deleted S3 file ${s3Key}`);
     } catch (error) {
-      console.error(`Failed to delete S3 file during rollback: ${s3Key}`, error);
+      log.error(`Failed to delete S3 file during rollback: ${s3Key}`, error);
       throw error;
     }
   }
@@ -315,11 +325,10 @@ export class UploadService {
    */
   private async deleteDbRecord(recordId: string): Promise<void> {
     try {
-      const { deleteImage } = await import('@/services/dbService');
       await deleteImage(recordId);
-      console.log(`Rollback: Deleted DB record ${recordId}`);
+      log.info(`Rollback: Deleted DB record ${recordId}`);
     } catch (error) {
-      console.error(`Failed to delete DB record during rollback: ${recordId}`, error);
+      log.error(`Failed to delete DB record during rollback: ${recordId}`, error);
       throw error;
     }
   }
@@ -332,11 +341,10 @@ export class UploadService {
    */
   private async deleteThumbnailRecord(thumbnailId: string): Promise<void> {
     try {
-      const { deleteThumbnail } = await import('@/services/dbService');
       await deleteThumbnail(thumbnailId);
-      console.log(`Rollback: Deleted thumbnail DB record ${thumbnailId}`);
+      log.info(`Rollback: Deleted thumbnail DB record ${thumbnailId}`);
     } catch (error) {
-      console.error(`Failed to delete thumbnail DB record during rollback: ${thumbnailId}`, error);
+      log.error(`Failed to delete thumbnail DB record during rollback: ${thumbnailId}`, error);
       throw error;
     }
   }
@@ -348,11 +356,11 @@ export class UploadService {
    */
   private parseTags(tags?: string | string[]): string[] {
     if (!tags) return [];
-    
+
     if (Array.isArray(tags)) {
       return tags;
     }
-    
+
     if (typeof tags === 'string') {
       try {
         // Try to parse as JSON array first
@@ -365,7 +373,7 @@ export class UploadService {
         return tags.split(',').map((tag: string) => tag.trim()).filter(Boolean);
       }
     }
-    
+
     return [];
   }
 }

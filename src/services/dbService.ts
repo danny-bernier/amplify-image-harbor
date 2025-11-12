@@ -3,13 +3,17 @@
  * Provides CRUD operations for all image-related data models with proper error handling
  * and automatic timestamp management.
  * 
- * @author Image Harbor Team
+ * @author Danny Bernier
  * @version 1.0.0
  */
 
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../amplify/data/resource';
-import type { ThumbnailSize } from '../utils/imageUtils';
+import type { ThumbnailSize } from '@/types/thumbnail';
+import { logger } from '@/utils/logger';
+
+// Create component-specific logger
+const log = logger.forComponent('DB Service');
 
 // Generate the typed client
 const client = generateClient<Schema>();
@@ -36,7 +40,10 @@ export interface CreateImageInput {
  */
 export const createImage = async (input: CreateImageInput) => {
   try {
+    log.devDebug('Creating image record', { title: input.title, s3Key: input.s3Key });
+
     const now = new Date().toISOString();
+
     const result = await client.models.Image.create({
       ...input,
       created: now,
@@ -49,7 +56,7 @@ export const createImage = async (input: CreateImageInput) => {
     
     return result.data;
   } catch (error) {
-    console.error('Error creating image:', error);
+    log.error('Error creating image:', error);
     throw error;
   }
 };
@@ -70,7 +77,7 @@ export const getImage = async (id: string) => {
     
     return result.data;
   } catch (error) {
-    console.error('Error getting image:', error);
+    log.error('Error getting image:', error);
     throw error;
   }
 };
@@ -93,7 +100,7 @@ export const listImages = async (limit?: number) => {
     
     return result.data;
   } catch (error) {
-    console.error('Error listing images:', error);
+    log.error('Error listing images:', error);
     throw error;
   }
 };
@@ -119,7 +126,7 @@ export const updateImage = async (id: string, updates: Partial<CreateImageInput>
     
     return result.data;
   } catch (error) {
-    console.error('Error updating image:', error);
+    log.error('Error updating image:', error);
     throw error;
   }
 };
@@ -132,6 +139,8 @@ export const updateImage = async (id: string, updates: Partial<CreateImageInput>
  */
 export const deleteImage = async (id: string) => {
   try {
+    log.devDebug('Deleting image record', { imageId: id });
+
     const result = await client.models.Image.delete({ id });
     
     if (result.errors) {
@@ -140,7 +149,7 @@ export const deleteImage = async (id: string) => {
     
     return result.data;
   } catch (error) {
-    console.error('Error deleting image:', error);
+    log.error('Error deleting image:', error);
     throw error;
   }
 };
@@ -178,7 +187,7 @@ export const createEdited = async (input: CreateEditedInput) => {
     
     return result.data;
   } catch (error) {
-    console.error('Error creating edited:', error);
+    log.error('Error creating edited:', error);
     throw error;
   }
 };
@@ -199,7 +208,7 @@ export const getEdited = async (id: string) => {
     
     return result.data;
   } catch (error) {
-    console.error('Error getting edited:', error);
+    log.error('Error getting edited:', error);
     throw error;
   }
 };
@@ -226,7 +235,7 @@ export const listEditedByOriginal = async (imageId: string) => {
     
     return result.data;
   } catch (error) {
-    console.error('Error listing edited:', error);
+    log.error('Error listing edited:', error);
     throw error;
   }
 };
@@ -252,7 +261,7 @@ export const updateEdited = async (id: string, updates: Partial<CreateEditedInpu
     
     return result.data;
   } catch (error) {
-    console.error('Error updating edited:', error);
+    log.error('Error updating edited:', error);
     throw error;
   }
 };
@@ -273,7 +282,7 @@ export const deleteEdited = async (id: string) => {
     
     return result.data;
   } catch (error) {
-    console.error('Error deleting edited:', error);
+    log.error('Error deleting edited:', error);
     throw error;
   }
 };
@@ -297,7 +306,10 @@ export interface CreateThumbnailInput {
  */
 export const createThumbnail = async (input: CreateThumbnailInput) => {
   try {
+    log.devDebug('Creating thumbnail record', { imageId: input.imageId, size: input.size, s3Key: input.s3Key });
+
     const now = new Date().toISOString();
+
     const result = await client.models.Thumbnail.create({
       ...input,
       created: now,
@@ -310,7 +322,7 @@ export const createThumbnail = async (input: CreateThumbnailInput) => {
     
     return result.data;
   } catch (error) {
-    console.error('Error creating thumbnail:', error);
+    log.error('Error creating thumbnail:', error);
     throw error;
   }
 };
@@ -331,7 +343,7 @@ export const getThumbnail = async (id: string) => {
     
     return result.data;
   } catch (error) {
-    console.error('Error getting thumbnail:', error);
+    log.error('Error getting thumbnail:', error);
     throw error;
   }
 };
@@ -362,7 +374,7 @@ export const getThumbnailBySize = async (imageId: string, size: 'SMALL' | 'MEDIU
     
     return result.data[0] || null; // Return first match or null
   } catch (error) {
-    console.error('Error getting thumbnail by size:', error);
+    log.error('Error getting thumbnail by size:', error);
     throw error;
   }
 };
@@ -388,7 +400,7 @@ export const updateThumbnail = async (id: string, updates: Partial<CreateThumbna
     
     return result.data;
   } catch (error) {
-    console.error('Error updating thumbnail:', error);
+    log.error('Error updating thumbnail:', error);
     throw error;
   }
 };
@@ -424,7 +436,7 @@ export const getSmallThumbnailsForImages = async (imageIds: string[]) => {
     
     return smallThumbnailsByImage;
   } catch (error) {
-    console.error('Error getting small thumbnails for images:', error);
+    log.error('Error getting small thumbnails for images:', error);
     throw error;
   }
 };
@@ -437,6 +449,8 @@ export const getSmallThumbnailsForImages = async (imageIds: string[]) => {
  */
 export const deleteThumbnail = async (id: string) => {
   try {
+    log.devDebug('Deleting thumbnail record', { thumbnailId: id });
+
     const result = await client.models.Thumbnail.delete({ id });
     
     if (result.errors) {
@@ -445,7 +459,7 @@ export const deleteThumbnail = async (id: string) => {
     
     return result.data;
   } catch (error) {
-    console.error('Error deleting thumbnail:', error);
+    log.error('Error deleting thumbnail:', error);
     throw error;
   }
 };

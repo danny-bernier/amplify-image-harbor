@@ -3,11 +3,15 @@
  * Provides functions for uploading images to different storage buckets (private/protected)
  * and managing file access through signed URLs.
  * 
- * @author Image Harbor Team
+ * @author Danny Bernier
  * @version 1.0.0
  */
 
 import { uploadData, getUrl, remove } from 'aws-amplify/storage';
+import { logger } from '@/utils/logger';
+
+// Create component-specific logger
+const log = logger.forComponent('S3 Service');
 
 /**
  * Upload a file to S3 with specified path and metadata
@@ -18,17 +22,22 @@ import { uploadData, getUrl, remove } from 'aws-amplify/storage';
  */
 const uploadFile = async (path: string, file: File): Promise<string> => {
   try {
-    const result = await uploadData({
+    log.devDebug(`Client-side upload to ${path}`);
+
+    // Configure upload options
+    const uploadOptions = {
       path: path,
       data: file,
       options: {
         contentType: file.type,
       }
-    }).result;
+    };
+
+    const result = await uploadData(uploadOptions).result;
 
     return result.path;
   } catch (error) {
-    console.error('Upload failed:', error);
+    log.error('Upload failed:', error);
     throw error;
   }
 };
@@ -47,9 +56,9 @@ export const uploadPrivateOriginal = async (file: File, fileName: string): Promi
 
 /**
  * Upload a thumbnail image file to the private storage bucket
- * @param file - The thumbnail image file to upload
+ * @param file - The thumbnail file to upload  
  * @param fileName - The unique filename for S3 storage
- * @returns Promise resolving to the S3 key of the uploaded file
+ * @returns Promise resolving to the S3 key of the uploaded thumbnail
  * @throws Error if upload fails
  */
 export const uploadPrivateThumbnail = async (file: File, fileName: string): Promise<string> => {
@@ -58,10 +67,10 @@ export const uploadPrivateThumbnail = async (file: File, fileName: string): Prom
 };
 
 /**
- * Upload an edited image file to the private storage bucket
+ * Upload an edited image file to the private storage bucket  
  * @param file - The edited image file to upload
  * @param fileName - The unique filename for S3 storage
- * @returns Promise resolving to the S3 key of the uploaded file
+ * @returns Promise resolving to the S3 key of the uploaded edited image
  * @throws Error if upload fails
  */
 export const uploadPrivateEdited = async (file: File, fileName: string): Promise<string> => {
@@ -119,16 +128,21 @@ export const uploadProtectedEdited = async (file: File, fileName: string): Promi
  */
 export const getFileUrl = async (path: string): Promise<string> => {
   try {
-    const result = await getUrl({
+    // Configure URL generation options for client-side access
+    const urlOptions: any = {
       path: path,
       options: {
         expiresIn: 3600, // 1 hour
       }
-    });
+    };
+
+    log.devDebug(`Client-side URL generation for ${path}`);
+    
+    const result = await getUrl(urlOptions);
 
     return result.url.toString();
   } catch (error) {
-    console.error('Failed to get file URL:', error);
+    log.error('Failed to get file URL:', error);
     throw error;
   }
 };
@@ -141,11 +155,16 @@ export const getFileUrl = async (path: string): Promise<string> => {
  */
 export const deleteFile = async (path: string): Promise<void> => {
   try {
-    await remove({
+    // Configure delete options for client-side access
+    const deleteOptions: any = {
       path: path
-    });
+    };
+
+    log.devDebug(`Client-side deletion of ${path}`);
+    
+    await remove(deleteOptions);
   } catch (error) {
-    console.error('Failed to delete file:', error);
+    log.error('Failed to delete file:', error);
     throw error;
   }
 };

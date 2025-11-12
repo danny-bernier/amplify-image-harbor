@@ -3,6 +3,13 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { SelectedFile, FileMetadata } from './UploadWizard';
+import { fetchAuthSession } from 'aws-amplify/auth';
+import { logger } from '@/utils/logger';
+import { uploadService } from '@/services/uploadService';
+
+// Create component-specific logger
+const log = logger.forComponent('UploadProgressStep');
+
 
 interface UploadProgressStepProps {
   selectedFiles: SelectedFile[];
@@ -16,14 +23,13 @@ interface UploadStatus {
   status: 'pending' | 'uploading' | 'success' | 'error';
   progress: number;
   error?: string;
-  s3Key?: string;
 }
 
-export function UploadProgressStep({ 
-  selectedFiles, 
-  fileMetadata, 
-  onComplete, 
-  onPrev 
+export function UploadProgressStep({
+  selectedFiles,
+  fileMetadata,
+  onComplete,
+  onPrev
 }: UploadProgressStepProps) {
   const [uploadStatuses, setUploadStatuses] = useState<Record<string, UploadStatus>>({});
   const [isUploading, setIsUploading] = useState(false);
@@ -54,90 +60,76 @@ export function UploadProgressStep({
     updateUploadStatus(fileId, { status: 'uploading' });
 
     try {
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append('file', file.file);
-      
-      // Add metadata if available
-      const metadata = fileMetadata[fileId];
-      if (metadata) {
-        if (metadata.title) formData.append('title', metadata.title);
-        if (metadata.description) formData.append('description', metadata.description);
-        if (metadata.tags) formData.append('tags', JSON.stringify(metadata.tags));
-      }
-
-      // Upload to S3 with progress tracking
-      const xhr = new XMLHttpRequest();
-      
-      return new Promise((resolve, reject) => {
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            const progress = Math.round((e.loaded / e.total) * 100);
-            updateUploadStatus(fileId, { progress });
-          }
-        });
-
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            const response = JSON.parse(xhr.responseText);
-            updateUploadStatus(fileId, { 
-              status: 'success', 
-              progress: 100,
-              s3Key: response.s3Key 
-            });
-            resolve();
-          } else {
-            updateUploadStatus(fileId, { 
-              status: 'error', 
-              error: `Upload failed: ${xhr.statusText}` 
-            });
-            reject(new Error(xhr.statusText));
-          }
-        });
-
-        xhr.addEventListener('error', () => {
-          updateUploadStatus(fileId, { 
-            status: 'error', 
-            error: 'Network error during upload' 
-          });
-          reject(new Error('Network error'));
-        });
-
-        xhr.open('POST', '/api/upload');
-        xhr.send(formData);
-      });
-
+      // Direct service calls (full client-side)
+      await uploadViaDirectService(file, fileId);
     } catch (error) {
-      updateUploadStatus(fileId, { 
-        status: 'error', 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      updateUploadStatus(fileId, {
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
       throw error;
     }
   };
 
+  const uploadViaDirectService = async (file: SelectedFile, fileId: string): Promise<void> => {
+    // Ensure user is authenticated
+    const session = await fetchAuthSession();
+    if (!session.tokens?.accessToken) {
+      throw new Error('User not authenticated');
+    }
+
+    // Prepare metadata for uploadService
+    const metadata = fileMetadata[fileId] || {};
+
+    // Use uploadService directly (client-side processing)
+    log.devDebug(`Starting direct service upload for file: ${file.file.name}`);
+
+    // Note: uploadService.processImageUploads doesn't support progress tracking
+    // This is a limitation of the direct approach for individual files
+    updateUploadStatus(fileId, { progress: 50 }); // Simulate progress
+
+    const result = await uploadService.processImageUploads(
+      [file.file],
+      [metadata],
+      {}
+    );
+
+    if (result.errors && result.errors.length > 0) {
+      throw new Error(result.errors[0].error);
+    }
+
+    updateUploadStatus(fileId, {
+      status: 'success',
+      progress: 100
+    });
+
+    log.devDebug(`Direct service upload completed for file: ${file.file.name}`);
+  };
+
+
+
   const startUpload = async () => {
     setIsUploading(true);
-    
+
     try {
       // Upload files sequentially to avoid overwhelming the server
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
         await uploadSingleFile(file);
-        
+
         // Update overall progress
         const completedCount = i + 1;
         const progress = Math.round((completedCount / selectedFiles.length) * 100);
         setOverallProgress(progress);
       }
-      
+
       // All uploads completed successfully
       setTimeout(() => {
         onComplete();
       }, 1000); // Small delay to show completion state
-      
+
     } catch (error) {
-      console.error('Upload process failed:', error);
+      log.error('Upload process failed:', error);
       setIsUploading(false);
     }
   };
@@ -172,15 +164,15 @@ export function UploadProgressStep({
     }
   };
 
-  const allCompleted = Object.values(uploadStatuses).every(status => 
+  const allCompleted = Object.values(uploadStatuses).every(status =>
     status.status === 'success' || status.status === 'error'
   );
 
-  const successCount = Object.values(uploadStatuses).filter(status => 
+  const successCount = Object.values(uploadStatuses).filter(status =>
     status.status === 'success'
   ).length;
 
-  const errorCount = Object.values(uploadStatuses).filter(status => 
+  const errorCount = Object.values(uploadStatuses).filter(status =>
     status.status === 'error'
   ).length;
 
@@ -190,7 +182,7 @@ export function UploadProgressStep({
       <div className="text-center">
         <h3 className="heading-secondary">Upload Progress</h3>
         <p className="text-caption mt-2">
-          {allCompleted 
+          {allCompleted
             ? `Upload completed: ${successCount} successful, ${errorCount} failed`
             : `Uploading ${selectedFiles.length} images to your gallery...`
           }
@@ -204,14 +196,13 @@ export function UploadProgressStep({
           <span className="text-caption">{overallProgress}%</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-3">
-          <div 
-            className={`h-3 rounded-full transition-all duration-300 ${
-              allCompleted 
-                ? errorCount > 0 
-                  ? 'bg-yellow-500' 
+          <div
+            className={`h-3 rounded-full transition-all duration-300 ${allCompleted
+                ? errorCount > 0
+                  ? 'bg-yellow-500'
                   : 'bg-green-500'
                 : 'bg-blue-500'
-            }`}
+              }`}
             style={{ width: `${overallProgress}%` }}
           />
         </div>
@@ -258,7 +249,7 @@ export function UploadProgressStep({
                   {status.status === 'uploading' && (
                     <div className="mt-2">
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${status.progress}%` }}
                         />
@@ -296,8 +287,8 @@ export function UploadProgressStep({
 
       {/* Action Buttons */}
       <div className="flex justify-between items-center pt-6 border-t">
-        <button 
-          onClick={onPrev} 
+        <button
+          onClick={onPrev}
           disabled={isUploading}
           className="btn-secondary"
         >

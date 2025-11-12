@@ -10,6 +10,25 @@ import Navbar from '../components/Navbar';
 
 Amplify.configure(outputs);
 
+// Configure Authenticator to use email as username
+const authenticatorFormFields = {
+  signUp: {
+    email: {
+      order: 1,
+      isRequired: true,
+      placeholder: 'Enter your email address',
+    },
+    password: {
+      order: 2,
+      isRequired: true,
+    },
+    confirm_password: {
+      order: 3,
+      isRequired: true,
+    },
+  },
+};
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,7 +43,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} antialiased`}>
-        <Authenticator>
+        <Authenticator 
+          formFields={authenticatorFormFields}
+          loginMechanisms={['email']}
+          signUpAttributes={['email']}
+        >
           <Navbar />
           {children}
         </Authenticator>

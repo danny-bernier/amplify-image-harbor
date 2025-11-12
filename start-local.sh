@@ -5,10 +5,15 @@
 
 set -e
 
+# Configuration variables
+SANDBOX_TIMEOUT_SECONDS=300
+
 echo "Starting development environment..."
 echo "Current directory: $(pwd)"
 
-# Check if sandbox is already running
+###################################################
+#================ AMPLIFY SANDBOX =================
+###################################################
 echo "Checking if development environment is already running..."
 
 # Check for existing ampx sandbox processes (primary check)
@@ -44,7 +49,7 @@ start "Amplify Sandbox" "C:\Program Files\Git\bin\bash.exe" -c "cd '$CURRENT_DIR
 echo "Waiting for sandbox to deploy and checking status..."
 sandbox_running=false
 
-for i in {1..300}; do
+for i in $(seq 1 $SANDBOX_TIMEOUT_SECONDS); do
     # Method 1: Check if amplify_outputs.json was recently created/modified (best indicator sandbox is working)
     if [ -f "amplify_outputs.json" ] && [ $(find amplify_outputs.json -mmin -1 2>/dev/null | wc -l) -gt 0 ]; then
         sandbox_running=true
@@ -69,10 +74,14 @@ for i in {1..300}; do
         break
     fi
 
-    echo "Waiting for sandbox deployment... $i seconds (timeout in 300s or 5 minutes)"
+    echo "Waiting for sandbox deployment... $i seconds (timeout in ${SANDBOX_TIMEOUT_SECONDS}s or $((SANDBOX_TIMEOUT_SECONDS/60)) minutes)"
     sleep 1
 done
 
+
+###################################################
+#==================== FRONTEND ====================
+###################################################
 if [ "$sandbox_running" = true ]; then
     echo "Sandbox confirmed running, starting frontend..."
 else
