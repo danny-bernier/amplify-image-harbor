@@ -400,6 +400,10 @@ body {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   }
   
+  .gallery-item.selected {
+    box-shadow: 0 0 0 2px var(--primary);
+  }
+  
   /* Inspector Panel */
   .inspector {
     @apply transition-all duration-300 ease-out;
@@ -416,6 +420,90 @@ body {
   
   .inspector-content {
     padding: 1.5rem;
+  }
+
+  /* Inspector Panel Component */
+  .inspector-panel {
+    @apply absolute bg-white shadow-lg border border-gray-200;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    z-index: 10; /* Lower than fullscreen modal */
+    border-radius: 0;
+    
+    /* Portrait: bottom of screen */
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 50vh;
+  }
+  
+  /* Landscape: right side of screen */
+  @media (orientation: landscape) {
+    .inspector-panel {
+      top: 0; /* Position relative to gallery container which already has navbar spacing */
+      right: 0;
+      bottom: 0;
+      left: auto;
+      width: 400px;
+      max-height: none;
+      border-radius: 0;
+      border-right: none; /* Remove right border since it's at screen edge */
+    }
+  }
+  
+  .inspector-panel.expanded {
+    @apply h-auto;
+  }
+  
+  .inspector-expand-btn {
+    @apply p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors;
+  }
+  
+  .inspector-close-btn {
+    @apply p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors;
+  }
+  
+  .inspector-content-wrapper {
+    @apply p-4;
+  }
+  
+  .inspector-image-container {
+    @apply mb-4;
+  }
+  
+  .inspector-image {
+    @apply w-full h-auto rounded-lg transition-transform duration-200;
+  }
+  
+  .inspector-image:hover {
+    @apply scale-[1.02];
+  }
+
+  /* Gallery Container */
+  .gallery-container {
+    @apply relative;
+    min-height: 100vh; /* Fill viewport height */
+  }
+  
+  .inspector-description-compact {
+    @apply mt-2;
+  }
+  
+  .inspector-details {
+    @apply mt-4 pt-4 border-t border-gray-200;
+    border-color: var(--border);
+  }
+  
+  .inspector-details.visible {
+    @apply block;
+  }
+  
+  .inspector-details.hidden {
+    @apply hidden;
+  }
+  
+  .inspector-section {
+    @apply mb-4;
   }
   
   /* Fullscreen Modal */
@@ -458,6 +546,28 @@ body {
     @apply flex space-x-3 justify-end;
   }
   
+  /* Fullscreen Image Modal */
+  .fullscreen-modal {
+    @apply fixed inset-0 flex items-center justify-center p-4;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 9999; /* Very high z-index to ensure it appears on top */
+    cursor: pointer;
+  }
+  
+  .fullscreen-content {
+    @apply relative max-w-full max-h-full;
+    cursor: default;
+  }
+  
+  .fullscreen-close-btn {
+    @apply absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors z-10;
+    background: rgba(0, 0, 0, 0.5);
+  }
+  
+  .fullscreen-image {
+    @apply max-w-full max-h-full object-contain;
+  }
+
   /* Utilities */
   .container {
     @apply mx-auto px-4;

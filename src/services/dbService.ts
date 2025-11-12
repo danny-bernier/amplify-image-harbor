@@ -9,7 +9,8 @@
 
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../amplify/data/resource';
-import type { ThumbnailSize } from '@/types/thumbnail';
+import type { ThumbnailSize, ThumbnailSizeName } from '@/types/thumbnail';
+import { THUMBNAIL_SIZES } from '@/types/thumbnail';
 import { logger } from '@/utils/logger';
 
 // Create component-specific logger
@@ -295,7 +296,7 @@ export const deleteEdited = async (id: string) => {
 export interface CreateThumbnailInput {
   imageId: string;
   s3Key: string;
-  size?: 'SMALL' | 'MEDIUM' | 'LARGE'; // Database enum constraint
+  size?: ThumbnailSizeName; // Database enum constraint
 }
 
 /**
@@ -355,7 +356,7 @@ export const getThumbnail = async (id: string) => {
  * @returns Promise resolving to the thumbnail record or null if not found
  * @throws Error if retrieval fails
  */
-export const getThumbnailBySize = async (imageId: string, size: 'SMALL' | 'MEDIUM' | 'LARGE') => {
+export const getThumbnailBySize = async (imageId: string, size: ThumbnailSizeName) => {
   try {
     const result = await client.models.Thumbnail.list({
       filter: {
@@ -417,7 +418,7 @@ export const getSmallThumbnailsForImages = async (imageIds: string[]) => {
     const result = await client.models.Thumbnail.list({
       filter: {
         size: {
-          eq: 'SMALL'
+          eq: THUMBNAIL_SIZES.SMALL.name
         }
       }
     });

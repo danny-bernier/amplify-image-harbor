@@ -6,6 +6,7 @@ import { fetchAuthSession } from 'aws-amplify/auth';
 import { logger } from '@/utils/logger';
 import { listImages, getThumbnailBySize } from '@/services/dbService';
 import { getFileUrl } from '@/services/s3Service';
+import { THUMBNAIL_SIZES, ThumbnailSizeName } from '@/types/thumbnail';
 
 // Create component-specific logger
 const log = logger.forComponent('Gallery');
@@ -52,8 +53,8 @@ export default function Gallery() {
     }
   };
 
-  // Load medium or large thumbnail on demand
-  const loadThumbnailOnDemand = async (imageId: string, size: 'MEDIUM' | 'LARGE') => {
+  // Load medium or large thumbnail on demand  
+  const loadThumbnailOnDemand = async (imageId: string, size: ThumbnailSizeName) => {
     const cacheKey = `${imageId}-${size}`;
     if (loadingThumbnails[cacheKey]) return; // Already loading
 
@@ -90,7 +91,7 @@ export default function Gallery() {
         prevImages.map(img => {
           if (img.id === imageId) {
             const updatedImg = { ...img };
-            if (size === 'MEDIUM') {
+            if (size === THUMBNAIL_SIZES.MEDIUM.name) {
               updatedImg.mediumThumbnail = { s3Key: thumbnailData.s3Key, url: thumbnailData.url };
             } else {
               updatedImg.largeThumbnail = { s3Key: thumbnailData.s3Key, url: thumbnailData.url };
@@ -112,7 +113,7 @@ export default function Gallery() {
     // Load large thumbnail when fullscreen opens
     useEffect(() => {
       if (!image.largeThumbnail) {
-        loadThumbnailOnDemand(image.id, 'LARGE');
+        loadThumbnailOnDemand(image.id, THUMBNAIL_SIZES.LARGE.name);
       }
     }, [image.id]);
 
@@ -146,7 +147,7 @@ export default function Gallery() {
     // Load medium thumbnail when inspector opens
     useEffect(() => {
       if (!image.mediumThumbnail) {
-        loadThumbnailOnDemand(image.id, 'MEDIUM');
+        loadThumbnailOnDemand(image.id, THUMBNAIL_SIZES.MEDIUM.name);
       }
     }, [image.id]);
 
@@ -304,7 +305,7 @@ export default function Gallery() {
             // Try to get small thumbnail for each image
             let smallThumbnail: { s3Key: string; url: string } | null = null;
             try {
-              const thumbnailRecord = await getThumbnailBySize(dbImage.id, 'SMALL');
+              const thumbnailRecord = await getThumbnailBySize(dbImage.id, THUMBNAIL_SIZES.SMALL.name);
               if (thumbnailRecord) {
                 const thumbnailUrl = await getFileUrl(thumbnailRecord.s3Key);
                 smallThumbnail = {

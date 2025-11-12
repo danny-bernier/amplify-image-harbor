@@ -18,6 +18,7 @@ export const THUMBNAIL_SIZES = {
 
 export type ThumbnailSizeKey = keyof typeof THUMBNAIL_SIZES;
 export type ThumbnailSize = typeof THUMBNAIL_SIZES[ThumbnailSizeKey];
+export type ThumbnailSizeName = typeof THUMBNAIL_SIZES[ThumbnailSizeKey]['name'];
 
 /**
  * Output format for generated thumbnails (JPEG)
