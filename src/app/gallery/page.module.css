@@ -1,0 +1,5 @@
+/* Gallery Page Layout */
+.main {
+  flex: 1; /* Take remaining space after navbar */
+  overflow: hidden; /* Prevent main from expanding beyond available space */
+}

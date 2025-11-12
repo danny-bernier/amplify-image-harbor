@@ -57,6 +57,10 @@ body {
   background: var(--background);
   color: var(--foreground);
   transition: background-color 0.2s ease, color 0.2s ease;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
 }
 
 /* ========================================
@@ -376,145 +380,42 @@ body {
     }
   }
   
-  /* Gallery Styles */
-  .gallery-grid {
-    @apply grid gap-4 auto-rows-fr;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  }
-  
-  @media (min-aspect-ratio: 16/9) {
-    .gallery-grid {
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    }
-  }
-  
-  .gallery-item {
-    @apply relative overflow-hidden rounded-lg cursor-pointer transition-all duration-200;
-    background: var(--surface);
-    border: 1px solid var(--border);
-  }
-  
-  .gallery-item:hover {
-    border-color: var(--border-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  }
-  
-  .gallery-item.selected {
-    box-shadow: 0 0 0 2px var(--primary);
-  }
-  
-  /* Inspector Panel */
-  .inspector {
-    @apply transition-all duration-300 ease-out;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 0.75rem;
-    overflow: hidden;
-  }
-  
-  .inspector-header {
-    @apply flex items-center justify-between p-4;
-    border-bottom: 1px solid var(--border);
-  }
-  
-  .inspector-content {
-    padding: 1.5rem;
-  }
 
-  /* Inspector Panel Component */
-  .inspector-panel {
-    @apply absolute bg-white shadow-lg border border-gray-200;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    z-index: 10; /* Lower than fullscreen modal */
-    border-radius: 0;
-    
-    /* Portrait: bottom of screen */
-    bottom: 0;
-    left: 0;
-    right: 0;
-    max-height: 50vh;
-  }
   
-  /* Landscape: right side of screen */
-  @media (orientation: landscape) {
-    .inspector-panel {
-      top: 0; /* Position relative to gallery container which already has navbar spacing */
-      right: 0;
-      bottom: 0;
-      left: auto;
-      width: 400px;
-      max-height: none;
-      border-radius: 0;
-      border-right: none; /* Remove right border since it's at screen edge */
-    }
-  }
-  
-  .inspector-panel.expanded {
-    @apply h-auto;
-  }
-  
-  .inspector-expand-btn {
-    @apply p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors;
-  }
-  
-  .inspector-close-btn {
-    @apply p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors;
-  }
-  
-  .inspector-content-wrapper {
-    @apply p-4;
-  }
-  
-  .inspector-image-container {
-    @apply mb-4;
-  }
-  
-  .inspector-image {
-    @apply w-full h-auto rounded-lg transition-transform duration-200;
-  }
-  
-  .inspector-image:hover {
-    @apply scale-[1.02];
-  }
 
-  /* Gallery Container */
+
+  /* Gallery Container - Grid Layout */
   .gallery-container {
-    @apply relative;
-    min-height: 100vh; /* Fill viewport height */
+    display: grid;
+    flex: 1; /* Take remaining space after navbar */
+    overflow: hidden; /* Prevent content from overflowing */
+    transition: grid-template-columns 0.3s ease, grid-template-rows 0.3s ease;
   }
   
-  .inspector-description-compact {
-    @apply mt-2;
+  /* Default: Single area for gallery only */
+  .gallery-container {
+    grid-template-rows: 1fr;
+    grid-template-columns: 1fr;
   }
   
-  .inspector-details {
-    @apply mt-4 pt-4 border-t border-gray-200;
-    border-color: var(--border);
+  /* Portrait: 50/50 split vertically when selection exists */
+  .gallery-container.has-selection {
+    grid-template-rows: 1fr 1fr;
   }
   
-  .inspector-details.visible {
-    @apply block;
+  /* Landscape: Place gallery and inspector side by side when selection exists */
+  @media (orientation: landscape) {
+    .gallery-container.has-selection {
+      grid-template-columns: 1fr 400px;
+      grid-template-rows: 1fr;
+    }
   }
   
-  .inspector-details.hidden {
-    @apply hidden;
-  }
+
   
-  .inspector-section {
-    @apply mb-4;
-  }
+
   
-  /* Fullscreen Modal */
-  .modal-backdrop {
-    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
-    background: rgba(0, 0, 0, 0.9);
-  }
-  
-  .modal-close {
-    @apply absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors;
-  }
+
   
   /* Confirmation Modal */
   .confirmation-backdrop {

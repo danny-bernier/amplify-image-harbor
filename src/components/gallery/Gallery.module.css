@@ -1,0 +1,61 @@
+/* Gallery Component Styles */
+
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Prevent container from expanding beyond available space */
+  max-height: 100%; /* Ensure it doesn't exceed parent height */
+}
+
+.top {
+  flex: 1; /* Take full space when no selection */
+  overflow: hidden; /* Prevent expanding beyond allocated space */
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Critical: Allow flex item to shrink properly */
+}
+
+/* When inspector is visible, image grid takes only 50% */
+.hasSelection .top {
+  flex: 1; /* Equal split with bottom when selection exists */
+}
+
+/* Ensure bottom area appears and takes 50% when selection exists */
+.hasSelection .bottom {
+  flex: 1; /* Equal split with top when selection exists */
+}
+
+.scrollArea {
+  flex: 1;
+  overflow-y: auto; /* Scroll when content is too long */
+  padding: 1rem;
+  min-height: 0; /* Critical: Allow flex item to shrink and enable scrolling */
+}
+
+.bottom {
+  flex: 1; /* Take 50% of available space */
+  overflow: hidden; /* Never scroll - content must fit */
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Item styles */
+.item {
+  padding: 10px;
+  border: 1px solid var(--muted);
+  margin: 5px;
+  cursor: pointer;
+  background: var(--surface);
+  border-radius: 4px;
+}
+
+.selectedItem {
+  padding: 10px;
+  border: 1px solid var(--primary);
+  margin: 5px;
+  cursor: pointer;
+  background: var(--surface);
+  border-radius: 4px;
+}
