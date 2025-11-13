@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Main gallery component for displaying and managing image collections
+ * Provides image grid display, single/multi-selection modes, thumbnails loading,
+ * and integration with image inspector components.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -10,6 +19,7 @@ import { GalleryImage } from '@/types/gallery';
 import styles from './Gallery.module.css';
 import ImageGrid from './ImageGrid';
 import ImageInspector from './ImageInspector';
+import MultiImageInspector from './MultiImageInspector';
 import FullscreenPreview from './FullscreenPreview';
 
 // Create component-specific logger
@@ -20,6 +30,7 @@ export default function Gallery() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
+  const [selectedImages, setSelectedImages] = useState<GalleryImage[]>([]);
   const [isInspectorExpanded, setIsInspectorExpanded] = useState(false);
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const [loadingThumbnails, setLoadingThumbnails] = useState<Record<string, boolean>>({});
@@ -132,6 +143,18 @@ export default function Gallery() {
               log.devWarn(`No small thumbnail found for image ${dbImage.id}:`, error);
             }
 
+            // Parse jsonTags if it exists (it's stored as a JSON string in the database)
+            let parsedJsonTags: Record<string, any> | null = null;
+            if (dbImage.jsonTags) {
+              try {
+                parsedJsonTags = typeof dbImage.jsonTags === 'string' 
+                  ? JSON.parse(dbImage.jsonTags) 
+                  : dbImage.jsonTags;
+              } catch (error) {
+                log.devWarn(`Failed to parse jsonTags for image ${dbImage.id}:`, error);
+              }
+            }
+
             return {
               id: dbImage.id,
               title: dbImage.title,
@@ -141,6 +164,7 @@ export default function Gallery() {
               width: dbImage.width,
               height: dbImage.height,
               tags: dbImage.tags?.filter(tag => tag !== null) || null,
+              jsonTags: parsedJsonTags,
               created: dbImage.createdAt,
               lastUpdated: dbImage.updatedAt,
               smallThumbnail
@@ -170,6 +194,53 @@ export default function Gallery() {
 
     fetchImages();
   }, []);
+
+  // Multi-selection handlers
+  const handleImageSelect = (image: GalleryImage, isMultiSelect: boolean = false) => {
+    if (isMultiSelect) {
+      // Toggle image in multi-selection
+      setSelectedImages(prev => {
+        const isAlreadySelected = prev.some(img => img.id === image.id);
+        if (isAlreadySelected) {
+          return prev.filter(img => img.id !== image.id);
+        } else {
+          return [...prev, image];
+        }
+      });
+      // Clear single selection when multi-selecting
+      setSelectedImage(null);
+    } else {
+      // Single selection mode
+      if (selectedImages.length > 0) {
+        // If we have multi-selection, clear it and select single image
+        setSelectedImages([]);
+        setSelectedImage(image);
+      } else {
+        // Normal single selection - toggle behavior
+        if (selectedImage?.id === image.id) {
+          setSelectedImage(null);
+        } else {
+          setSelectedImage(image);
+        }
+      }
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedImages([]);
+    setSelectedImage(null);
+    setIsInspectorExpanded(false);
+  };
+
+  const handleShareImages = (images: GalleryImage[]) => {
+    // Placeholder for share functionality
+    console.log('Share images:', images);
+  };
+
+  const handleDeleteImages = (images: GalleryImage[]) => {
+    // Placeholder for delete functionality  
+    console.log('Delete images:', images);
+  };
 
   // Drag handlers for resizable splitter
   const containerRef = useRef<HTMLDivElement>(null);
@@ -278,10 +349,8 @@ export default function Gallery() {
         <ImageGrid
           images={images}
           selectedImage={selectedImage}
-          onImageSelect={(image) => {
-            setSelectedImage(image);
-            setIsInspectorExpanded(false);
-          }}
+          selectedImages={selectedImages}
+          onImageSelect={handleImageSelect}
           onLoadThumbnail={loadThumbnailOnDemand}
         />
       </div>
@@ -300,8 +369,17 @@ export default function Gallery() {
         </div>
       )}
       
-      {/* Inspector Area - Uses ImageInspector component */}
-      {selectedImage && (
+      {/* Inspector Area - Uses ImageInspector or MultiImageInspector component */}
+      {selectedImages.length > 0 ? (
+        <div className={styles.bottom}>
+          <MultiImageInspector
+            selectedImages={selectedImages}
+            onClearSelection={handleClearSelection}
+            onShare={handleShareImages}
+            onDelete={handleDeleteImages}
+          />
+        </div>
+      ) : selectedImage && (
         <div className={styles.bottom}>
           <ImageInspector
             image={selectedImage}

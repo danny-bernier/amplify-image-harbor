@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Metadata entry step component for upload wizard
+ * Provides form interface for entering image titles, descriptions, and tags
+ * with bulk operations and individual file customization.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
 'use client';
 
 import { useState } from 'react';
@@ -29,16 +38,57 @@ export function MetadataStep({
     });
   };
 
+  const parseTagEntry = (tagInput: string): { key?: string; value?: string; isSimpleTag: boolean } => {
+    const trimmed = tagInput.trim();
+    
+    // Check for key-value patterns (key=value or key:value)
+    const equalMatch = trimmed.match(/^([^=]+)=(.*)$/);
+    const colonMatch = trimmed.match(/^([^:]+):(.*)$/);
+    
+    if (equalMatch) {
+      const key = equalMatch[1].trim();
+      const value = equalMatch[2].trim();
+      return { key, value, isSimpleTag: false };
+    }
+    
+    if (colonMatch) {
+      const key = colonMatch[1].trim();
+      const value = colonMatch[2].trim();
+      return { key, value, isSimpleTag: false };
+    }
+    
+    // Simple tag (no key-value pair)
+    return { isSimpleTag: true };
+  };
+
   const addTag = (fileId: string) => {
     const tagInput = tagInputs[fileId];
     if (!tagInput?.trim()) return;
     
     const currentMetadata = fileMetadata[fileId] || {};
-    const currentTags = currentMetadata.tags || [];
-    const newTag = tagInput.trim();
+    const parsed = parseTagEntry(tagInput);
     
-    if (!currentTags.includes(newTag)) {
-      updateMetadata(fileId, 'tags', [...currentTags, newTag]);
+    if (parsed.key && parsed.value !== undefined && !parsed.isSimpleTag) {
+      // Handle key-value pair - store in jsonTags
+      const currentJsonTags = currentMetadata.jsonTags || {};
+      
+      // Check if this key already exists
+      if (currentJsonTags[parsed.key] !== undefined) {
+        return; // Don't add duplicate keys
+      }
+      
+      updateMetadata(fileId, 'jsonTags', {
+        ...currentJsonTags,
+        [parsed.key]: parsed.value
+      });
+    } else if (parsed.isSimpleTag) {
+      // Handle simple tag - store in tags array
+      const currentTags = currentMetadata.tags || [];
+      const newTag = tagInput.trim();
+      
+      if (!currentTags.includes(newTag)) {
+        updateMetadata(fileId, 'tags', [...currentTags, newTag]);
+      }
     }
     
     setTagInputs(prev => ({ ...prev, [fileId]: '' }));
@@ -47,7 +97,20 @@ export function MetadataStep({
   const removeTag = (fileId: string, tagToRemove: string) => {
     const currentMetadata = fileMetadata[fileId] || {};
     const currentTags = currentMetadata.tags || [];
-    updateMetadata(fileId, 'tags', currentTags.filter(tag => tag !== tagToRemove));
+    const updatedTags = currentTags.filter(tag => tag !== tagToRemove);
+    
+    // Update only the tags array
+    updateMetadata(fileId, 'tags', updatedTags);
+  };
+
+  const removeJsonTag = (fileId: string, keyToRemove: string) => {
+    const currentMetadata = fileMetadata[fileId] || {};
+    const currentJsonTags = currentMetadata.jsonTags || {};
+    
+    const updatedJsonTags = { ...currentJsonTags };
+    delete updatedJsonTags[keyToRemove];
+    
+    updateMetadata(fileId, 'jsonTags', Object.keys(updatedJsonTags).length > 0 ? updatedJsonTags : undefined);
   };
 
   const handleTagInputChange = (fileId: string, value: string) => {
@@ -157,7 +220,7 @@ export function MetadataStep({
                         value={tagInput}
                         onChange={(e) => handleTagInputChange(file.id, e.target.value)}
                         onKeyPress={(e) => handleTagInputKeyPress(e, file.id)}
-                        placeholder="Add a tag"
+                        placeholder="Add a tag (e.g., 'nature' or 'location=Paris')"
                         className="form-input flex-1 text-sm"
                       />
                       <button
@@ -169,20 +232,48 @@ export function MetadataStep({
                       </button>
                     </div>
 
-                    {/* Current Tags */}
+                    {/* Helper Text */}
+                    <div className="text-xs text-muted">
+                      Enter keywords associated with this image. Use "key=value" or "key:value" to add structured metadata.
+                    </div>
+
+                    {/* Current Simple Tags */}
                     {metadata.tags && metadata.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {metadata.tags.map((tag, tagIndex) => (
-                          <span key={tagIndex} className="tag text-xs">
-                            {tag}
-                            <button
-                              onClick={() => removeTag(file.id, tag)}
-                              className="tag-remove"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
+                      <div>
+                        <div className="text-xs font-medium text-muted mb-1">General Tags:</div>
+                        <div className="flex flex-wrap gap-1">
+                          {metadata.tags.map((tag, tagIndex) => (
+                            <span key={tagIndex} className="tag text-xs bg-blue-100 text-blue-800 border-blue-200">
+                              {tag}
+                              <button
+                                onClick={() => removeTag(file.id, tag)}
+                                className="tag-remove"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Current JSON Tags (Key-Value Pairs) */}
+                    {metadata.jsonTags && Object.keys(metadata.jsonTags).length > 0 && (
+                      <div>
+                        <div className="text-xs font-medium text-muted mb-1">Structured Tags:</div>
+                        <div className="flex flex-wrap gap-1">
+                          {Object.entries(metadata.jsonTags).map(([key, value]) => (
+                            <span key={key} className="tag text-xs bg-green-100 text-green-800 border-green-200">
+                              <strong>{key}:</strong> {String(value)}
+                              <button
+                                onClick={() => removeJsonTag(file.id, key)}
+                                className="tag-remove"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

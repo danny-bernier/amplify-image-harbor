@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Confirmation modal component for user interactions
+ * Provides reusable modal dialog for confirming destructive actions
+ * with customizable title, message, and action buttons.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
 'use client';
 
 import { useEffect } from 'react';

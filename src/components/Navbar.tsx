@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Navigation bar component for the application
+ * Provides site navigation with links to main sections and branding.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
 "use client";
 
 import Link from 'next/link';

@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Amplify data resource configuration
+ * Defines database schema for images, thumbnails, and edited images
+ * with proper authorization rules and relationships.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 
 const ownerPermissions = ['create', 'read', 'update', 'delete'] as const;
@@ -12,7 +21,8 @@ const schema = a.schema({
       width: a.integer().required(), // Example 1920
       height: a.integer().required(), // Example 1080
       s3Key: a.string().required(),
-      tags: a.string().array(),
+      tags: a.string().array(), // Simple tag strings
+      jsonTags: a.json(), // JSON object for key-value tags only
       created: a.datetime().required(),
       lastUpdated: a.datetime().required(),
     })

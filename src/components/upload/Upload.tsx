@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Main upload component with multi-step wizard
+ * Provides file selection, metadata entry, and upload progress tracking
+ * with state management across the upload process.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
 'use client';
 
 import { useState } from 'react';

@@ -31,6 +31,7 @@ export interface CreateImageInput {
   height: number;
   s3Key: string;
   tags?: string[];
+  jsonTags?: Record<string, any>;
 }
 
 /**
@@ -41,23 +42,108 @@ export interface CreateImageInput {
  */
 export const createImage = async (input: CreateImageInput) => {
   try {
-    log.devDebug('Creating image record', { title: input.title, s3Key: input.s3Key });
+    log.devDebug('Input received for createImage', { 
+      title: input.title, 
+      s3Key: input.s3Key,
+      width: input.width,
+      height: input.height,
+      description: input.description,
+      tagsType: typeof input.tags,
+      tagsLength: input.tags?.length,
+      tags: input.tags,
+      jsonTagsType: typeof input.jsonTags,
+      jsonTagsKeys: input.jsonTags ? Object.keys(input.jsonTags) : null,
+      jsonTags: input.jsonTags
+    });
+
+    // Validate input data before sending to GraphQL
+    if (!input.s3Key) {
+      throw new Error('s3Key is required but missing');
+    }
+    
+    if (!input.width || !input.height) {
+      throw new Error(`Invalid dimensions - width: ${input.width}, height: ${input.height}`);
+    }
+
+    // Validate tags
+    if (input.tags) {
+      log.debug('Processing tags array of', input.tags.length, 'tags');
+      log.devDebug('Tags validation details', { 
+        count: input.tags.length, 
+        tags: input.tags,
+        allStrings: input.tags.every(tag => typeof tag === 'string')
+      });
+      
+      if (!Array.isArray(input.tags)) {
+        throw new Error('tags must be an array');
+      }
+      
+      if (!input.tags.every(tag => typeof tag === 'string')) {
+        throw new Error('All tags must be strings');
+      }
+    }
+
+    // Validate jsonTags
+    if (input.jsonTags) {
+      log.debug('Processing jsonTags object with', Object.keys(input.jsonTags).length, 'properties');
+      log.devDebug('JsonTags validation details', { 
+        type: typeof input.jsonTags,
+        isObject: typeof input.jsonTags === 'object' && input.jsonTags !== null,
+        keys: Object.keys(input.jsonTags),
+        values: Object.values(input.jsonTags),
+        stringified: JSON.stringify(input.jsonTags)
+      });
+      
+      if (typeof input.jsonTags !== 'object' || input.jsonTags === null) {
+        throw new Error('jsonTags must be a valid object');
+      }
+      
+      try {
+        JSON.stringify(input.jsonTags);
+        log.debug('jsonTags validated as JSON-serializable');
+      } catch (jsonError) {
+        log.error('jsonTags is not JSON-serializable', jsonError);
+        throw new Error('jsonTags must be JSON-serializable');
+      }
+    }
 
     const now = new Date().toISOString();
-
-    const result = await client.models.Image.create({
+    
+    // Workaround for Amplify Gen 2 JSON field issue - stringify jsonTags
+    const createPayload = {
       ...input,
+      jsonTags: input.jsonTags ? JSON.stringify(input.jsonTags) : undefined,
       created: now,
       lastUpdated: now,
+    };
+    
+    log.devDebug('Final payload for GraphQL create', { 
+      payload: createPayload,
+      payloadStringified: JSON.stringify(createPayload, null, 2)
     });
+
+    log.debug('Calling client.models.Image.create...');
+    const result = await client.models.Image.create(createPayload);
     
     if (result.errors) {
+      log.error('GraphQL errors returned', { 
+        errors: result.errors,
+        errorMessages: result.errors.map(e => e.message),
+        fullResult: result
+      });
       throw new Error(`Failed to create image: ${result.errors.map(e => e.message).join(', ')}`);
     }
     
+    log.info('Image created successfully');
+    
     return result.data;
   } catch (error) {
-    log.error('Error creating image:', error);
+    log.error('Exception in createImage', { 
+      error,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack : undefined
+    });
+    log.devDebug('Failed createImage input data', { inputData: input });
     throw error;
   }
 };
@@ -307,23 +393,57 @@ export interface CreateThumbnailInput {
  */
 export const createThumbnail = async (input: CreateThumbnailInput) => {
   try {
-    log.devDebug('Creating thumbnail record', { imageId: input.imageId, size: input.size, s3Key: input.s3Key });
+    log.devDebug('Thumbnail input received', { 
+      imageId: input.imageId, 
+      size: input.size, 
+      s3Key: input.s3Key,
+      inputType: typeof input,
+      fullInput: input
+    });
+
+    // Validate input
+    if (!input.imageId) {
+      throw new Error('imageId is required for thumbnail creation');
+    }
+    
+    if (!input.s3Key) {
+      throw new Error('s3Key is required for thumbnail creation');
+    }
+    
+    if (!input.size) {
+      throw new Error('size is required for thumbnail creation');
+    }
 
     const now = new Date().toISOString();
 
-    const result = await client.models.Thumbnail.create({
+    const thumbnailPayload = {
       ...input,
       created: now,
       lastUpdated: now,
-    });
+    };
+    
+    log.devDebug('Creating thumbnail with payload', { payload: thumbnailPayload });
+
+    log.debug('Calling client.models.Thumbnail.create for size', input.size);
+    const result = await client.models.Thumbnail.create(thumbnailPayload);
     
     if (result.errors) {
+      log.error('Thumbnail creation errors', { 
+        errors: result.errors,
+        errorMessages: result.errors.map(e => e.message)
+      });
       throw new Error(`Failed to create thumbnail: ${result.errors.map(e => e.message).join(', ')}`);
     }
     
+    log.info('Thumbnail created successfully');
+    
     return result.data;
   } catch (error) {
-    log.error('Error creating thumbnail:', error);
+    log.error('Exception in createThumbnail', { 
+      error,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error'
+    });
+    log.devDebug('Failed createThumbnail input data', { inputData: input });
     throw error;
   }
 };

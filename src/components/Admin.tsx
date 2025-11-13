@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Admin panel component for administrative functions
+ * Provides administrative interface for managing application settings
+ * and user management (placeholder for future implementation).
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
 import React from 'react';
 
 export default function Admin() {

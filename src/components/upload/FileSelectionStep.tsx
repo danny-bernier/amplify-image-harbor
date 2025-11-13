@@ -1,3 +1,12 @@
+/**
+ * @fileoverview File selection step component for upload wizard
+ * Provides drag-and-drop file selection with image preview, validation,
+ * and batch file management capabilities.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
 'use client';
 
 import { useCallback, useState } from 'react';

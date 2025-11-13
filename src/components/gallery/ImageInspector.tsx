@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Single image inspector component for detailed image viewing
+ * Provides full-size image display, metadata information, and image details
+ * with responsive design for different screen sizes.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
 'use client';
 
 import Image from 'next/image';
@@ -61,7 +70,7 @@ export default function ImageInspector({
               onClick={onClose}
               className={styles.closeBtn}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -116,7 +125,7 @@ export default function ImageInspector({
           </div>
         </div>
 
-        {/* Tags */}
+        {/* Regular Tags */}
         {image.tags && image.tags.length > 0 && (
           <div className={styles.section}>
             <h3 className="text-primary mb-2">Tags:</h3>
@@ -124,6 +133,20 @@ export default function ImageInspector({
               {image.tags.map((tag, index) => (
                 <span key={index} className="tag-item">
                   {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Structured Tags (Key-Value Pairs) */}
+        {image.jsonTags && Object.keys(image.jsonTags).length > 0 && (
+          <div className={styles.section}>
+            <h3 className="text-primary mb-2">Structured Tags:</h3>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(image.jsonTags).map(([key, value], index) => (
+                <span key={index} className="tag-item">
+                  {key}: {typeof value === 'object' ? JSON.stringify(value) : String(value)}
                 </span>
               ))}
             </div>

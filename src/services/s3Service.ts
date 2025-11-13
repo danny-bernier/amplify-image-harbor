@@ -22,7 +22,12 @@ const log = logger.forComponent('S3 Service');
  */
 const uploadFile = async (path: string, file: File): Promise<string> => {
   try {
-    log.devDebug(`Client-side upload to ${path}`);
+    log.devDebug('Upload details', { 
+      path: path,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    });
 
     // Configure upload options
     const uploadOptions = {
@@ -33,11 +38,16 @@ const uploadFile = async (path: string, file: File): Promise<string> => {
       }
     };
 
+    log.debug('Starting file upload to storage');
     const result = await uploadData(uploadOptions).result;
 
+    log.debug('Upload completed successfully');
     return result.path;
   } catch (error) {
-    log.error('Upload failed:', error);
+    log.error('Upload failed', { 
+      error,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error'
+    });
     throw error;
   }
 };
@@ -51,7 +61,10 @@ const uploadFile = async (path: string, file: File): Promise<string> => {
  */
 export const uploadPrivateOriginal = async (file: File, fileName: string): Promise<string> => {
   const s3Key = `private/images/original/${fileName}`;
-  return uploadFile(s3Key, file);
+  log.debug('Uploading private original image');
+  const result = await uploadFile(s3Key, file);
+  log.info('Private original image uploaded successfully');
+  return result;
 };
 
 /**
@@ -63,7 +76,10 @@ export const uploadPrivateOriginal = async (file: File, fileName: string): Promi
  */
 export const uploadPrivateThumbnail = async (file: File, fileName: string): Promise<string> => {
   const s3Key = `private/images/thumbnail/${fileName}`;
-  return uploadFile(s3Key, file);
+  log.debug('Uploading private thumbnail');
+  const result = await uploadFile(s3Key, file);
+  log.info('Private thumbnail uploaded successfully');
+  return result;
 };
 
 /**
@@ -75,7 +91,10 @@ export const uploadPrivateThumbnail = async (file: File, fileName: string): Prom
  */
 export const uploadPrivateEdited = async (file: File, fileName: string): Promise<string> => {
   const s3Key = `private/images/edited/${fileName}`;
-  return uploadFile(s3Key, file);
+  log.debug('Uploading private edited image');
+  const result = await uploadFile(s3Key, file);
+  log.info('Private edited image uploaded successfully');
+  return result;
 };
 
 /**
@@ -128,6 +147,8 @@ export const uploadProtectedEdited = async (file: File, fileName: string): Promi
  */
 export const getFileUrl = async (path: string): Promise<string> => {
   try {
+    log.devDebug('URL generation request', { path: path });
+    
     // Configure URL generation options for client-side access
     const urlOptions: any = {
       path: path,
@@ -136,13 +157,17 @@ export const getFileUrl = async (path: string): Promise<string> => {
       }
     };
 
-    log.devDebug(`Client-side URL generation for ${path}`);
-    
+    log.debug('Generating signed URL');
     const result = await getUrl(urlOptions);
 
+    log.info('Signed URL generated successfully');
     return result.url.toString();
   } catch (error) {
-    log.error('Failed to get file URL:', error);
+    log.error('Failed to get file URL', { 
+      error,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error'
+    });
+    log.devDebug('Failed URL generation for path', { path: path });
     throw error;
   }
 };
@@ -155,16 +180,23 @@ export const getFileUrl = async (path: string): Promise<string> => {
  */
 export const deleteFile = async (path: string): Promise<void> => {
   try {
+    log.devDebug('Delete request', { path: path });
+    
     // Configure delete options for client-side access
     const deleteOptions: any = {
       path: path
     };
 
-    log.devDebug(`Client-side deletion of ${path}`);
-    
+    log.debug('Deleting file from storage');
     await remove(deleteOptions);
+    
+    log.info('File deleted successfully');
   } catch (error) {
-    log.error('Failed to delete file:', error);
+    log.error('Failed to delete file', { 
+      error,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error'
+    });
+    log.devDebug('Failed deletion for path', { path: path });
     throw error;
   }
 };

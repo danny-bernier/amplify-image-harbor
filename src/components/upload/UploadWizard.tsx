@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Upload wizard component with step management
+ * Provides multi-step upload workflow with file selection, metadata entry,
+ * and progress tracking with navigation between steps.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
 'use client';
 
 import { useState } from 'react';
@@ -14,7 +23,8 @@ export interface SelectedFile {
 export interface FileMetadata {
   title?: string;
   description?: string;
-  tags?: string[];
+  tags?: string[]; // Simple tags (no key-value pairs)
+  jsonTags?: Record<string, any>; // Key-value pairs and reserved "tags" array
 }
 
 export interface UploadWizardState {

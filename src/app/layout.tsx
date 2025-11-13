@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Root layout component with authentication and configuration
+ * Provides application-wide layout with Amplify authentication, font configuration,
+ * and global navigation structure.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
 "use client";
 
 import { Geist } from "next/font/google";

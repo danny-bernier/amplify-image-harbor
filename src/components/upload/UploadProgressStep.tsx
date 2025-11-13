@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Upload progress step component for upload wizard
+ * Provides real-time upload progress tracking, error handling, and completion
+ * status for batch file uploads with detailed feedback.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';

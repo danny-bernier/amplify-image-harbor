@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Amplify backend configuration
+ * Defines the main backend configuration including authentication, data,
+ * and storage resources for the Amplify application.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
 import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
 import { data } from './data/resource';

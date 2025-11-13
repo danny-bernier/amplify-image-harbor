@@ -444,6 +444,27 @@ body {
     @apply max-w-full max-h-full object-contain;
   }
 
+  /* Tag Components */
+  .tag-item {
+    @apply inline-block px-3 py-1 rounded-full text-sm font-medium;
+    background: var(--surface);
+    color: var(--muted-foreground);
+    border: 1px solid var(--border);
+  }
+  
+  .tag-item-key {
+    @apply inline-block px-2 py-1 rounded text-sm;
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+  
+  .tag-item-value {
+    @apply inline-block px-2 py-1 rounded text-sm;
+    background: var(--surface);
+    color: var(--muted-foreground);
+    border: 1px solid var(--border);
+  }
+
   /* Utilities */
   .container {
     @apply mx-auto px-4;

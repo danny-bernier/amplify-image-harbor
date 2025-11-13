@@ -7,6 +7,11 @@
  * @version 1.0.0
  */
 
+import { logger } from '@/utils/logger';
+
+// Create component-specific logger
+const log = logger.forComponent('Image Utils');
+
 /**
  * Comprehensive list of supported image file extensions
  * Includes standard formats (JPEG, PNG, TIFF) and professional RAW formats
@@ -25,12 +30,24 @@ export const ACCEPTED_IMAGE_TYPES = [
  * @returns A unique filename with UUID and preserved extension
  */
 export function generateImageFileName(originalFilename: string): string {
+  log.devDebug('Generating filename', { originalFilename });
+  
   const lastDotIndex = originalFilename.lastIndexOf('.');
   const fileExtension = lastDotIndex > 0 ? originalFilename.substring(lastDotIndex + 1) : '';
   
   // Use browser's crypto API for UUID generation
   const uuid = crypto.randomUUID();
-  return fileExtension ? `${uuid}.${fileExtension}` : uuid;
+  const generatedFilename = fileExtension ? `${uuid}.${fileExtension}` : uuid;
+  
+  log.debug('Generated unique filename with extension', fileExtension || 'none');
+  log.devDebug('Generated filename details', { 
+    originalFilename, 
+    extractedExtension: fileExtension,
+    uuid,
+    generatedFilename 
+  });
+  
+  return generatedFilename;
 }
 
 /**
@@ -39,7 +56,14 @@ export function generateImageFileName(originalFilename: string): string {
  * @returns True if file type is supported, false otherwise
  */
 export function isValidImageType(file: File): boolean {
+  log.devDebug('Validating file type', { 
+    fileName: file.name, 
+    fileType: file.type, 
+    fileSize: file.size 
+  });
+
   if (!file.type.startsWith('image/')) {
+    log.debug('File rejected: not an image type');
     return false;
   }
 
@@ -48,7 +72,17 @@ export function isValidImageType(file: File): boolean {
   const extension = fileName.substring(fileName.lastIndexOf('.'));
 
   // Check if extension is in accepted types
-  return ACCEPTED_IMAGE_TYPES.includes(extension as any);
+  const isValid = ACCEPTED_IMAGE_TYPES.includes(extension as any);
+  
+  log.debug('File type validation result:', isValid ? 'accepted' : 'rejected');
+  log.devDebug('File validation details', { 
+    fileName: file.name,
+    extension,
+    isValid,
+    acceptedTypes: ACCEPTED_IMAGE_TYPES.length
+  });
+  
+  return isValid;
 }
 
 /**
@@ -58,15 +92,36 @@ export function isValidImageType(file: File): boolean {
  * @throws Error if image fails to load
  */
 export async function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
-  const img = await createImageFromFile(file);
+  log.debug('Getting image dimensions');
+  log.devDebug('Dimension calculation request', { fileName: file.name, fileSize: file.size });
 
   try {
-    return {
-      width: img.naturalWidth,
-      height: img.naturalHeight,
-    };
-  } finally {
-    URL.revokeObjectURL(img.src);
+    const img = await createImageFromFile(file);
+
+    try {
+      const dimensions = {
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+      };
+      
+      log.debug('Image dimensions calculated successfully');
+      log.devDebug('Calculated dimensions', { 
+        fileName: file.name,
+        width: dimensions.width,
+        height: dimensions.height
+      });
+      
+      return dimensions;
+    } finally {
+      URL.revokeObjectURL(img.src);
+    }
+  } catch (error) {
+    log.error('Failed to get image dimensions', { 
+      error,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error'
+    });
+    log.devDebug('Dimension calculation failed for file', { fileName: file.name });
+    throw error;
   }
 }
 
@@ -77,11 +132,20 @@ export async function getImageDimensions(file: File): Promise<{ width: number; h
  * @throws Error if image fails to load
  */
 function createImageFromFile(file: File): Promise<HTMLImageElement> {
+  log.debug('Creating image from file');
+  log.devDebug('Image creation request', { fileName: file.name, fileType: file.type });
+
   return new Promise((resolve, reject) => {
     const img = new Image();
 
-    img.onload = () => resolve(img);
+    img.onload = () => {
+      log.debug('Image loaded successfully');
+      resolve(img);
+    };
+    
     img.onerror = () => {
+      log.error('Failed to load image for processing');
+      log.devDebug('Image load failed for file', { fileName: file.name });
       URL.revokeObjectURL(img.src);
       reject(new Error('Failed to load image'));
     };

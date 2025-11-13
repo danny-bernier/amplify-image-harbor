@@ -24,6 +24,7 @@ export interface FileMetadata {
   title?: string;
   description?: string;
   tags?: string | string[];
+  jsonTags?: Record<string, any>;
 }
 
 /**
@@ -104,7 +105,8 @@ export class UploadService {
           error: errorMessage
         };
         errors.push(errorInfo);
-        log.error(`Upload failed for ${file.name}:`, errorMessage);
+        log.error('Upload failed for file:', errorMessage);
+        log.devDebug('Failed upload file details', { fileName: file.name });
       }
     }
 
@@ -134,11 +136,11 @@ export class UploadService {
     let thumbnailDbIds: { small?: string; medium?: string; large?: string } = {};
 
     try {
-      log.devDebug(`Processing file ${file.name} for client-side upload`);
+      log.devDebug('Processing file for client-side upload', { fileName: file.name });
 
       // Validate file type using centralized utility
       if (!isValidImageType(file)) {
-        throw new Error(`File ${file.name}: Unsupported image type. Supported formats include JPEG, PNG, TIFF, and various RAW formats.`);
+        throw new Error(`Unsupported image type`);
       }
       // Generate unique filename with UUID and preserve extension
       const fileName = generateImageFileName(file.name);
@@ -150,20 +152,50 @@ export class UploadService {
       const dimensions = await getImageDimensions(file);
 
       // Step 3: Parse metadata (no side effects)
+      log.debug('Processing metadata for file');
+      log.devDebug('Raw metadata received', {
+        fileName: file.name,
+        metadata,
+        metadataType: typeof metadata,
+        hasTitle: !!metadata.title,
+        hasDescription: !!metadata.description,
+        hasTags: !!metadata.tags,
+        hasJsonTags: !!metadata.jsonTags,
+        tagsType: typeof metadata.tags,
+        jsonTagsType: typeof metadata.jsonTags
+      });
+      
       const title = metadata.title || file.name.replace(/\.[^/.]+$/, '');
       const description = metadata.description || '';
       const tags = this.parseTags(metadata.tags);
-
+      
+      log.devDebug('Processed metadata', {
+        fileName: file.name,
+        title,
+        description,
+        parsedTags: tags,
+        parsedTagsLength: tags.length,
+        originalJsonTags: metadata.jsonTags,
+        jsonTagsKeys: metadata.jsonTags ? Object.keys(metadata.jsonTags) : null
+      });
+      
       // Step 4: Save original image to database
       const imageData: CreateImageInput = {
         title,
         description,
         s3Key,
         tags: tags.length > 0 ? tags : undefined,
+        jsonTags: metadata.jsonTags && Object.keys(metadata.jsonTags).length > 0 ? metadata.jsonTags : undefined,
         width: dimensions.width,
         height: dimensions.height,
       };
 
+      log.devDebug('Final imageData for database', {
+        imageData,
+        imageDataStringified: JSON.stringify(imageData, null, 2)
+      });
+
+      log.debug('Calling createImage...');
       const dbResult = await createImage(imageData);
       dbRecordId = dbResult?.id || null;
 
@@ -220,6 +252,7 @@ export class UploadService {
       };
 
       // Success - return complete result
+      log.info('File upload completed successfully');
       return {
         success: true,
         fileName: file.name,
@@ -290,12 +323,12 @@ export class UploadService {
         await Promise.allSettled(cleanupPromises);
         log.info('Rollback completed successfully');
       } catch (rollbackError) {
-        log.error('Rollback failed - manual cleanup may be required:', {
+        log.error('Rollback failed - manual cleanup may be required', { error: rollbackError });
+        log.devDebug('Rollback failure details', {
           s3Key,
           dbRecordId,
           thumbnailS3Keys,
-          thumbnailDbIds,
-          error: rollbackError
+          thumbnailDbIds
         });
       }
     }
@@ -310,9 +343,11 @@ export class UploadService {
   private async deleteS3File(s3Key: string): Promise<void> {
     try {
       await deleteFile(s3Key);
-      log.info(`Rollback: Deleted S3 file ${s3Key}`);
+      log.debug('Rollback: Deleted S3 file');
+      log.devDebug('Rollback: S3 file deleted', { s3Key });
     } catch (error) {
-      log.error(`Failed to delete S3 file during rollback: ${s3Key}`, error);
+      log.error('Failed to delete S3 file during rollback', error);
+      log.devDebug('Failed S3 rollback details', { s3Key });
       throw error;
     }
   }
@@ -326,9 +361,11 @@ export class UploadService {
   private async deleteDbRecord(recordId: string): Promise<void> {
     try {
       await deleteImage(recordId);
-      log.info(`Rollback: Deleted DB record ${recordId}`);
+      log.debug('Rollback: Deleted DB record');
+      log.devDebug('Rollback: DB record deleted', { recordId });
     } catch (error) {
-      log.error(`Failed to delete DB record during rollback: ${recordId}`, error);
+      log.error('Failed to delete DB record during rollback', error);
+      log.devDebug('Failed DB rollback details', { recordId });
       throw error;
     }
   }
@@ -342,9 +379,11 @@ export class UploadService {
   private async deleteThumbnailRecord(thumbnailId: string): Promise<void> {
     try {
       await deleteThumbnail(thumbnailId);
-      log.info(`Rollback: Deleted thumbnail DB record ${thumbnailId}`);
+      log.debug('Rollback: Deleted thumbnail DB record');
+      log.devDebug('Rollback: Thumbnail record deleted', { thumbnailId });
     } catch (error) {
-      log.error(`Failed to delete thumbnail DB record during rollback: ${thumbnailId}`, error);
+      log.error('Failed to delete thumbnail DB record during rollback', error);
+      log.devDebug('Failed thumbnail rollback details', { thumbnailId });
       throw error;
     }
   }
@@ -352,7 +391,7 @@ export class UploadService {
   /**
    * Parse tags from various input formats (array, JSON string, or comma-separated string)
    * @param tags - Tags in any supported format
-   * @returns Array of parsed tag strings
+   * @returns Array of parsed tag strings (simple tags only)
    */
   private parseTags(tags?: string | string[]): string[] {
     if (!tags) return [];

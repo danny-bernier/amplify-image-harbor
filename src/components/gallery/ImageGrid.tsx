@@ -1,28 +1,29 @@
+/**
+ * @fileoverview Responsive image grid component with multi-selection support
+ * Provides responsive grid layout with intelligent thumbnail sizing,
+ * single and multi-selection modes, and performance-optimized rendering.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
 'use client';
 
 import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { ImageGridProps } from '@/types/gallery';
 import { THUMBNAIL_SIZES, ThumbnailSizeName } from '@/types/thumbnail';
+import { getOptimalThumbnailSize, getBestThumbnail } from '@/utils/thumbnailUtils';
 import styles from './ImageGrid.module.css';
 
-export default function ImageGrid({ images, selectedImage, onImageSelect, onLoadThumbnail }: ImageGridProps) {
+export default function ImageGrid({ images, selectedImage, selectedImages, onImageSelect, onLoadThumbnail }: ImageGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [_, setContainerWidth] = useState(0);
   const [optimalThumbnailSizes, setOptimalThumbnailSizes] = useState<Record<string, ThumbnailSizeName>>({});
 
-  // Calculate optimal thumbnail size based on display dimensions
-  const getOptimalThumbnailSize = useCallback((displayWidth: number): ThumbnailSizeName => {
-    // Add some buffer for high DPI displays (multiply by device pixel ratio)
-    const targetWidth = displayWidth * (window.devicePixelRatio || 1);
-    
-    if (targetWidth <= THUMBNAIL_SIZES.SMALL.value * 1.2) {
-      return THUMBNAIL_SIZES.SMALL.name;
-    } else if (targetWidth <= THUMBNAIL_SIZES.MEDIUM.value * 1.2) {
-      return THUMBNAIL_SIZES.MEDIUM.name;
-    } else {
-      return THUMBNAIL_SIZES.LARGE.name;
-    }
+  // Use the extracted optimal thumbnail size calculation
+  const getOptimalSize = useCallback((displayWidth: number): ThumbnailSizeName => {
+    return getOptimalThumbnailSize(displayWidth) as ThumbnailSizeName;
   }, []);
 
   // Calculate grid item width based on container width and CSS grid settings
@@ -46,7 +47,7 @@ export default function ImageGrid({ images, selectedImage, onImageSelect, onLoad
     setContainerWidth(newWidth);
     
     const itemWidth = calculateGridItemWidth(newWidth);
-    const optimalSize = getOptimalThumbnailSize(itemWidth);
+    const optimalSize = getOptimalSize(itemWidth);
     
     // Update optimal sizes for all images
     const newOptimalSizes: Record<string, ThumbnailSizeName> = {};
@@ -93,65 +94,68 @@ export default function ImageGrid({ images, selectedImage, onImageSelect, onLoad
     });
   }, [optimalThumbnailSizes, images, onLoadThumbnail]);
 
-  // Get the best available thumbnail for an image
-  const getBestThumbnail = useCallback((image: any) => {
+  // Get the best available thumbnail for an image using the extracted utility
+  const getImageThumbnail = useCallback((image: any) => {
     const optimalSize = optimalThumbnailSizes[image.id];
-    
-    // Try to use the optimal size, fall back to available thumbnails
-    if (optimalSize === THUMBNAIL_SIZES.LARGE.name && image.largeThumbnail) {
-      return image.largeThumbnail;
-    } else if (optimalSize === THUMBNAIL_SIZES.MEDIUM.name && image.mediumThumbnail) {
-      return image.mediumThumbnail;
-    } else if (image.mediumThumbnail) {
-      return image.mediumThumbnail;
-    } else if (image.smallThumbnail) {
-      return image.smallThumbnail;
-    }
-    
-    // Fallback to original image
-    return { url: image.url };
+    return getBestThumbnail(image, optimalSize);
   }, [optimalThumbnailSizes]);
 
   return (
     <div className={styles.container}>      
       <div className={styles.scrollArea}>
         <div ref={gridRef} className={styles.grid}>
-          {images.map((image) => (
-            <div 
-              key={image.id} 
-              className={`${styles.item} cursor-pointer ${selectedImage?.id === image.id ? styles.selected : ''}`}
-              onClick={() => {
-                if (selectedImage?.id === image.id) {
-                  onImageSelect(null);
-                } else {
-                  onImageSelect(image);
-                }
-              }}
-            >
-              <div className={styles.imageContainer}>
-                <Image
-                  src={getBestThumbnail(image).url}
-                  alt={image.description || image.title || 'Uploaded image'}
-                  width={300}
-                  height={225}
-                  className={styles.image}
-                  unoptimized // For S3 URLs
-                />
+          {images.map((image) => {
+            const isSelected = selectedImage?.id === image.id;
+            const isMultiSelected = selectedImages.some(img => img.id === image.id);
+            const hasMultiSelection = selectedImages.length > 0;
+            
+            return (
+              <div 
+                key={image.id} 
+                className={`${styles.item} cursor-pointer ${isSelected ? styles.selected : ''} ${isMultiSelected ? styles.multiSelected : ''}`}
+                onClick={(e) => {
+                  const isCtrlClick = e.ctrlKey || e.metaKey;
+                  const isShiftClick = e.shiftKey;
+                  
+                  if (isCtrlClick || isShiftClick || hasMultiSelection) {
+                    // Multi-selection mode
+                    onImageSelect(image, true);
+                  } else {
+                    // Single selection mode
+                    if (isSelected) {
+                      // Clicking on already selected image deselects it
+                      onImageSelect(image, false);
+                    } else {
+                      onImageSelect(image, false);
+                    }
+                  }
+                }}
+              >
+                <div className={styles.imageContainer}>
+                  <Image
+                    src={getImageThumbnail(image).url}
+                    alt={image.description || image.title || 'Uploaded image'}
+                    width={300}
+                    height={225}
+                    className={styles.image}
+                    unoptimized // For S3 URLs
+                  />
+                </div>
+                <div className={styles.content}>
+                  {image.title && (
+                    <p className={styles.title}>
+                      {image.title}
+                    </p>
+                  )}
+                  {image.description && (
+                    <p className={styles.description}>
+                      {image.description}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className={styles.content}>
-                {image.title && (
-                  <p className={styles.title}>
-                    {image.title}
-                  </p>
-                )}
-                {image.description && (
-                  <p className={styles.description}>
-                    {image.description}
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
