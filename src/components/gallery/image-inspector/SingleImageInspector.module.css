@@ -1,10 +1,6 @@
 .panel {
-  background: var(--surface);
-  border-radius: 0;
-  height: 100%; /* Fill the grid area */
-  display: flex;
-  flex-direction: column;
-  overflow: hidden; /* Prevent overflow from grid area */
+  composes: basePanel from '../Common.module.css';
+  /* Component-specific overrides if needed */
 }
 
 .panelInfo {
@@ -22,33 +18,15 @@
 }
 
 .previewWrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  composes: basePreviewWrapper from '../Common.module.css';
 }
 
 .header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--border);
+  composes: baseHeader from '../Common.module.css';
 }
 
 .infoToggle {
-  padding: 0.5rem;
-  border-radius: 50%;
-  transition: all 0.15s ease;
-  color: var(--muted);
-  border: 2px solid var(--muted);
-  background: transparent;
-}
-
-.infoToggle:hover {
-  color: var(--muted-foreground);
-  border-color: var(--muted-foreground);
-  background-color: var(--surface-hover);
+  composes: baseMutedButton from '../Common.module.css';
 }
 
 .infoToggle.infoToggleActive {
@@ -63,18 +41,7 @@
 }
 
 .closeBtn {
-  padding: 0.5rem;
-  border-radius: 50%;
-  transition: all 0.15s ease;
-  color: var(--muted);
-  border: 2px solid var(--muted);
-  background: transparent;
-}
-
-.closeBtn:hover {
-  color: var(--muted-foreground);
-  border-color: var(--muted-foreground);
-  background-color: var(--surface-hover);
+  composes: baseCloseButton from '../Common.module.css';
 }
 
 .contentWrapper {

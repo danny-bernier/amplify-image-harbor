@@ -18,8 +18,7 @@ import { THUMBNAIL_SIZES, ThumbnailSizeName } from '@/types/thumbnail';
 import { GalleryImage } from '@/types/gallery';
 import styles from './Gallery.module.css';
 import ImageGrid from './ImageGrid';
-import ImageInspector from './ImageInspector';
-import MultiImageInspector from './MultiImageInspector';
+import { ImageInspector } from './image-inspector';
 import FullscreenPreview from './FullscreenPreview';
 
 // Create component-specific logger
@@ -31,7 +30,6 @@ export default function Gallery() {
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [selectedImages, setSelectedImages] = useState<GalleryImage[]>([]);
-  const [isInspectorExpanded, setIsInspectorExpanded] = useState(false);
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const [loadingThumbnails, setLoadingThumbnails] = useState<Record<string, boolean>>({});
   const [splitRatio, setSplitRatio] = useState(50); // Percentage for top panel
@@ -198,8 +196,21 @@ export default function Gallery() {
   // Multi-selection handlers
   const handleImageSelect = (image: GalleryImage, isMultiSelect: boolean = false) => {
     if (isMultiSelect) {
-      // Toggle image in multi-selection
+      // Starting multi-selection or adding to existing multi-selection
       setSelectedImages(prev => {
+        // If we have no multi-selection yet but have a single selection, start with that
+        if (prev.length === 0 && selectedImage) {
+          const isClickingSameAsSelected = selectedImage.id === image.id;
+          if (isClickingSameAsSelected) {
+            // Ctrl+clicking the same selected image should deselect it
+            return [];
+          } else {
+            // Start multi-selection with previously selected image + new image
+            return [selectedImage, image];
+          }
+        }
+        
+        // Normal multi-selection toggle behavior
         const isAlreadySelected = prev.some(img => img.id === image.id);
         if (isAlreadySelected) {
           return prev.filter(img => img.id !== image.id);
@@ -207,7 +218,7 @@ export default function Gallery() {
           return [...prev, image];
         }
       });
-      // Clear single selection when multi-selecting
+      // Clear single selection when we start multi-selecting
       setSelectedImage(null);
     } else {
       // Single selection mode
@@ -229,7 +240,6 @@ export default function Gallery() {
   const handleClearSelection = () => {
     setSelectedImages([]);
     setSelectedImage(null);
-    setIsInspectorExpanded(false);
   };
 
   const handleShareImages = (images: GalleryImage[]) => {
@@ -240,6 +250,25 @@ export default function Gallery() {
   const handleDeleteImages = (images: GalleryImage[]) => {
     // Placeholder for delete functionality  
     console.log('Delete images:', images);
+  };
+
+  // Navigation handlers for single image inspection
+  const handlePreviousImage = () => {
+    if (!selectedImage) return;
+    
+    const currentIndex = images.findIndex(img => img.id === selectedImage.id);
+    if (currentIndex > 0) {
+      setSelectedImage(images[currentIndex - 1]);
+    }
+  };
+
+  const handleNextImage = () => {
+    if (!selectedImage) return;
+    
+    const currentIndex = images.findIndex(img => img.id === selectedImage.id);
+    if (currentIndex < images.length - 1) {
+      setSelectedImage(images[currentIndex + 1]);
+    }
   };
 
   // Drag handlers for resizable splitter
@@ -335,11 +364,13 @@ export default function Gallery() {
     );
   }
 
+  const hasAnySelection = selectedImage || selectedImages.length > 0;
+
   return (
     <div 
       ref={containerRef}
-      className={`${styles.container} ${selectedImage ? styles.hasSelection : ''}`}
-      style={selectedImage ? {
+      className={`${styles.container} ${hasAnySelection ? styles.hasSelection : ''}`}
+      style={hasAnySelection ? {
         '--top-height': `${splitRatio}%`,
         '--bottom-height': `${100 - splitRatio}%`
       } as React.CSSProperties : {}}
@@ -355,8 +386,8 @@ export default function Gallery() {
         />
       </div>
       
-      {/* Resizable Splitter */}
-      {selectedImage && (
+      {/* Resizable Splitter - Shows for both single and multi-image selection */}
+      {(selectedImage && selectedImages.length === 0) || selectedImages.length > 0 ? (
         <div 
           className={`${styles.splitter} ${isDragging ? styles.splitterDragging : ''}`}
           onMouseDown={handleMouseDown}
@@ -367,30 +398,18 @@ export default function Gallery() {
             </svg>
           </div>
         </div>
-      )}
+      ) : null}
       
-      {/* Inspector Area - Uses ImageInspector or MultiImageInspector component */}
-      {selectedImages.length > 0 ? (
-        <div className={styles.bottom}>
-          <MultiImageInspector
-            selectedImages={selectedImages}
-            onClearSelection={handleClearSelection}
-            onShare={handleShareImages}
-            onDelete={handleDeleteImages}
-          />
-        </div>
-      ) : selectedImage && (
+      {/* Inspector Area - Uses unified ImageInspector component */}
+      {(selectedImages.length > 0 || selectedImage) && (
         <div className={styles.bottom}>
           <ImageInspector
-            image={selectedImage}
-            isInspectorExpanded={isInspectorExpanded}
-            onToggleInfo={() => setIsInspectorExpanded(!isInspectorExpanded)}
-            onClose={() => {
-              setSelectedImage(null);
-              setIsInspectorExpanded(false);
-            }}
-            onFullscreen={() => setIsFullscreenOpen(true)}
-            onLoadThumbnail={loadThumbnailOnDemand}
+            selectedImages={selectedImages.length > 0 ? selectedImages : selectedImage ? [selectedImage] : []}
+            onClose={handleClearSelection}
+            onShare={handleShareImages}
+            onDelete={handleDeleteImages}
+            onPrevious={selectedImage ? handlePreviousImage : undefined}
+            onNext={selectedImage ? handleNextImage : undefined}
           />
         </div>
       )}

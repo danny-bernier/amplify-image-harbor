@@ -10,10 +10,20 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect } from 'react';
+import { useState } from 'react';
 import { THUMBNAIL_SIZES } from '@/types/thumbnail';
-import { ImageInspectorProps } from '@/types/gallery';
-import styles from './ImageInspector.module.css';
+import { GalleryImage } from '@/types/gallery';
+import ImageInspectorControlBar from './ImageInspectorControlBar';
+import styles from './SingleImageInspector.module.css';
+
+interface SingleImageInspectorProps {
+  image: GalleryImage;
+  onClose: () => void;
+  onShare: (image: GalleryImage) => void;
+  onDelete: (image: GalleryImage) => void;
+  onPrevious?: () => void;
+  onNext?: () => void;
+}
 
 // Helper function to format dates
 const formatDate = (dateString: string | null | undefined) => {
@@ -31,54 +41,32 @@ const formatDate = (dateString: string | null | undefined) => {
   }
 };
 
-export default function ImageInspector({ 
+export default function SingleImageInspector({ 
   image, 
-  isInspectorExpanded: isInfoInspector, 
-  onToggleInfo: onToggleInfo, 
   onClose, 
-  onFullscreen,
-  onLoadThumbnail
-}: ImageInspectorProps) {
-  // Load large thumbnail when inspector opens for best quality preview
-  useEffect(() => {
-    if (!image.largeThumbnail) {
-      onLoadThumbnail(image.id, THUMBNAIL_SIZES.LARGE.name);
-    }
-  }, [image.id, image.largeThumbnail, onLoadThumbnail]);
+  onShare,
+  onDelete,
+  onPrevious,
+  onNext
+}: SingleImageInspectorProps) {
+  const [isInfoExpanded, setIsInfoExpanded] = useState(false);
 
   return (
-    <div className={`${styles.panel} ${isInfoInspector ? styles.expanded : ''}`}>
+    <div className={`${styles.panel} ${isInfoExpanded ? styles.expanded : ''}`}>
       {/* Main preview area - header and image together */}
       <div className={styles.previewWrapper}>
-        <div className={styles.header}>
-          <h2 className="heading-secondary">{image.title || 'Untitled Image'}</h2>
-          <div className="flex items-center gap-2">
-            {/* Info Toggle - toggles between image and details */}
-            <button 
-              onClick={onToggleInfo}
-              className={`${styles.infoToggle} ${isInfoInspector ? styles.infoToggleActive : ''} lg:landscape:hidden`}
-              title={isInfoInspector ? 'Show image preview' : 'Show image details'}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" strokeWidth={2}/>
-                <line x1="12" y1="16" x2="12" y2="12" strokeWidth={2}/>
-                <circle cx="12" cy="8" r="1" fill="currentColor"/>
-              </svg>
-            </button>
-            
-            <button 
-              onClick={onClose}
-              className={styles.closeBtn}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
+        <ImageInspectorControlBar
+          title={image.title || 'Untitled Image'}
+          onShare={() => onShare(image)}
+          onDelete={() => onDelete(image)}
+          onClose={onClose}
+          onToggleInfo={() => setIsInfoExpanded(!isInfoExpanded)}
+          showInfoToggle={true}
+          isInfoActive={isInfoExpanded}
+        />
         
         <div className={styles.contentWrapper}>
-          {!isInfoInspector ? (
+          {!isInfoExpanded ? (
             /* Image Preview Mode */
             <div className={styles.imageContainer}>
               <div className={styles.imageWrapper}>
@@ -86,8 +74,7 @@ export default function ImageInspector({
                   src={image.largeThumbnail?.url || image.mediumThumbnail?.url || image.url}
                   alt={image.description || image.title || 'Image preview'}
                   fill
-                  className={`${styles.image} cursor-pointer`}
-                  onClick={onFullscreen}
+                  className={styles.image}
                   unoptimized
                 />
               </div>

@@ -1,0 +1,102 @@
+/**
+ * @fileoverview Common CSS classes for gallery components
+ * Provides base classes that can be composed/extended by specific gallery components
+ * using CSS Modules `composes` functionality for inheritance-like behavior.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
+/* Base Panel Structure */
+.basePanel {
+  background: var(--surface);
+  border-radius: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Base Header Layout */
+.baseHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Base Preview Wrapper */
+.basePreviewWrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Base Content Wrapper */
+.baseContentWrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+/* Base Button Pattern */
+.baseButton {
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.15s ease;
+  border: 2px solid;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Close Button Base */
+.baseCloseButton {
+  composes: baseButton;
+  color: var(--muted);
+  border-color: var(--muted);
+}
+
+.baseCloseButton:hover {
+  color: var(--muted-foreground);
+  border-color: var(--muted-foreground);
+  background-color: var(--surface-hover);
+}
+
+/* Action Button Variants */
+.basePrimaryButton {
+  composes: baseButton;
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.basePrimaryButton:hover {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.baseDangerButton {
+  composes: baseButton;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.baseDangerButton:hover {
+  color: var(--danger-foreground);
+  border-color: var(--danger);
+  background-color: var(--danger);
+}
+
+.baseMutedButton {
+  composes: baseButton;
+  color: var(--muted);
+  border-color: var(--muted);
+}
+
+.baseMutedButton:hover {
+  color: var(--muted-foreground);
+  border-color: var(--muted-foreground);
+  background-color: var(--surface-hover);
+}

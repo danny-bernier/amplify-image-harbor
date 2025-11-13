@@ -1,0 +1,44 @@
+/**
+ * @fileoverview Styles for ImageInspectorControlBar component
+ * Composes base styles from Common.module.css for unified control bar styling.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
+.baseHeader {
+  composes: baseHeader from '../Common.module.css';
+}
+
+.titleSection {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.shareBtn {
+  composes: basePrimaryButton from '../Common.module.css';
+}
+
+.deleteBtn {
+  composes: baseDangerButton from '../Common.module.css';
+}
+
+.closeBtn {
+  composes: baseCloseButton from '../Common.module.css';
+}
+
+.infoToggle {
+  composes: baseMutedButton from '../Common.module.css';
+}
+
+.infoToggle.infoToggleActive {
+  color: var(--primary-foreground);
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.infoToggle.infoToggleActive:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}

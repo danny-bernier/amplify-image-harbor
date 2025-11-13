@@ -6,7 +6,7 @@
  * @version 1.0.0
  */
 
-import Gallery from '@/components/gallery/Gallery';
+import { Gallery } from '@/components/gallery';
 import styles from './page.module.css';
 
 export default function GalleryPage() {

@@ -1,0 +1,78 @@
+/* MultiImageInspector Component Styles */
+.panel {
+  composes: basePanel from '../Common.module.css';
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+}
+
+.previewWrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+}
+
+.contentWrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.previewGrid {
+  display: grid;
+  gap: 1rem;
+  /* Responsive grid with minimum item widths */
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .previewGrid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+}
+
+.previewItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.previewImageWrapper {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: var(--color-gray-100);
+  border: 1px solid var(--color-border);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.previewImageWrapper:hover {
+  border-color: var(--color-primary-400);
+  transform: scale(1.02);
+}
+
+.previewImage {
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+.previewTitle {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  word-break: break-word;
+  line-height: 1.2;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .previewImageWrapper {
+    background-color: var(--color-gray-800);
+  }
+}

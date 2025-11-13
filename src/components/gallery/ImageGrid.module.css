@@ -53,26 +53,7 @@
 }
 
 .item.multiSelected {
-  box-shadow: 0 0 0 3px var(--success);
-  border-color: var(--success);
-}
-
-.item.multiSelected::after {
-  content: '✓';
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: var(--success);
-  color: white;
-  border-radius: 50%;
-  width: 1.5rem;
-  height: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: bold;
-  z-index: 1;
+  box-shadow: 0 0 0 2px var(--primary);
 }
 
 .imageContainer {

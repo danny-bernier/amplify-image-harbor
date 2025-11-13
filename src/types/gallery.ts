@@ -39,5 +39,7 @@ export interface ImageInspectorProps {
     onToggleInfo: () => void;
     onClose: () => void;
     onFullscreen: () => void;
+    onShare: (image: GalleryImage) => void;
+    onDelete: (image: GalleryImage) => void;
     onLoadThumbnail: (imageId: string, size: any) => Promise<void>; // Using 'any' to avoid circular dependency with ThumbnailSizeName
 }
