@@ -23,6 +23,7 @@ export interface ImageGridProps {
     images: GalleryImage[];
     selectedImage: GalleryImage | null;
     onImageSelect: (image: GalleryImage | null) => void;
+    onLoadThumbnail: (imageId: string, size: any) => Promise<void>; // Using 'any' to avoid circular dependency with ThumbnailSizeName
 }
 
 export interface ImageInspectorProps {

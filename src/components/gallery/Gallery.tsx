@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchAuthSession, getCurrentUser } from 'aws-amplify/auth';
 import { logger } from '@/utils/logger';
 import { listImages, getThumbnailBySize } from '@/services/dbService';
@@ -23,6 +23,8 @@ export default function Gallery() {
   const [isInspectorExpanded, setIsInspectorExpanded] = useState(false);
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const [loadingThumbnails, setLoadingThumbnails] = useState<Record<string, boolean>>({});
+  const [splitRatio, setSplitRatio] = useState(50); // Percentage for top panel
+  const [isDragging, setIsDragging] = useState(false);
 
   // Load medium or large thumbnail on demand  
   const loadThumbnailOnDemand = async (imageId: string, size: ThumbnailSizeName) => {
@@ -169,6 +171,42 @@ export default function Gallery() {
     fetchImages();
   }, []);
 
+  // Drag handlers for resizable splitter
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging || !containerRef.current) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const mouseY = e.clientY - containerRect.top;
+    const newRatio = (mouseY / containerRect.height) * 100;
+    
+    // Constrain between 15% and 85%
+    const constrainedRatio = Math.max(15, Math.min(85, newRatio));
+    setSplitRatio(constrainedRatio);
+  }, [isDragging]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
   if (loading) {
     return (
       <div className="w-full p-4">
@@ -227,7 +265,14 @@ export default function Gallery() {
   }
 
   return (
-    <div className={`${styles.container} ${selectedImage ? styles.hasSelection : ''}`}>
+    <div 
+      ref={containerRef}
+      className={`${styles.container} ${selectedImage ? styles.hasSelection : ''}`}
+      style={selectedImage ? {
+        '--top-height': `${splitRatio}%`,
+        '--bottom-height': `${100 - splitRatio}%`
+      } as React.CSSProperties : {}}
+    >
       {/* Image Grid Area - Uses ImageGrid component */}
       <div className={styles.top}>
         <ImageGrid
@@ -237,8 +282,23 @@ export default function Gallery() {
             setSelectedImage(image);
             setIsInspectorExpanded(false);
           }}
+          onLoadThumbnail={loadThumbnailOnDemand}
         />
       </div>
+      
+      {/* Resizable Splitter */}
+      {selectedImage && (
+        <div 
+          className={`${styles.splitter} ${isDragging ? styles.splitterDragging : ''}`}
+          onMouseDown={handleMouseDown}
+        >
+          <div className={styles.splitterHandle}>
+            <svg className={styles.splitterIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h8M8 8h8M8 16h8" />
+            </svg>
+          </div>
+        </div>
+      )}
       
       {/* Inspector Area - Uses ImageInspector component */}
       {selectedImage && (
@@ -263,7 +323,6 @@ export default function Gallery() {
           image={selectedImage}
           isOpen={isFullscreenOpen}
           onClose={() => setIsFullscreenOpen(false)}
-          onLoadThumbnail={loadThumbnailOnDemand}
         />
       )}
     </div>

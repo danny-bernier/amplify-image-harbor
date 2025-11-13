@@ -16,14 +16,16 @@
   min-height: 0; /* Critical: Allow flex item to shrink properly */
 }
 
-/* When inspector is visible, image grid takes only 50% */
+/* When inspector is visible, use dynamic heights */
 .hasSelection .top {
-  flex: 1; /* Equal split with bottom when selection exists */
+  height: var(--top-height, 50%);
+  flex: none; /* Don't use flex, use explicit height */
 }
 
-/* Ensure bottom area appears and takes 50% when selection exists */
+/* Ensure bottom area uses remaining space */
 .hasSelection .bottom {
-  flex: 1; /* Equal split with top when selection exists */
+  height: var(--bottom-height, 50%);
+  flex: none; /* Don't use flex, use explicit height */
 }
 
 .scrollArea {
@@ -36,7 +38,7 @@
 .bottom {
   flex: 1; /* Take 50% of available space */
   overflow: hidden; /* Never scroll - content must fit */
-  border-top: 1px solid var(--border);
+  border-top: none; /* Remove border since we have splitter */
   display: flex;
   flex-direction: column;
 }
@@ -58,4 +60,54 @@
   cursor: pointer;
   background: var(--surface);
   border-radius: 4px;
+}
+
+/* Resizable Splitter Styles */
+.splitter {
+  position: relative;
+  height: 8px;
+  background: var(--border);
+  cursor: row-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  z-index: 10;
+}
+
+.splitter:hover {
+  background: var(--border-hover);
+}
+
+.splitterDragging {
+  background: var(--primary);
+}
+
+.splitterHandle {
+  position: absolute;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  transition: all 0.2s ease;
+}
+
+.splitter:hover .splitterHandle {
+  border-color: var(--border-hover);
+  box-shadow: 0 1px 4px var(--muted);
+}
+
+.splitterDragging .splitterHandle {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.splitterIcon {
+  width: 16px;
+  height: 16px;
+}
+
+.splitterDragging .splitterIcon {
+  opacity: 1;
 }

@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
-import { THUMBNAIL_SIZES, ThumbnailSizeName } from '@/types/thumbnail';
 import { GalleryImage } from '@/types/gallery';
 import styles from './FullscreenPreview.module.css';
 
@@ -9,22 +7,14 @@ interface FullscreenPreviewProps {
   image: GalleryImage;
   isOpen: boolean;
   onClose: () => void;
-  onLoadThumbnail: (imageId: string, size: ThumbnailSizeName) => Promise<void>;
 }
 
 export default function FullscreenPreview({ 
   image, 
   isOpen, 
-  onClose, 
-  onLoadThumbnail 
+  onClose
 }: FullscreenPreviewProps) {
-  // Load large thumbnail when fullscreen opens
-  useEffect(() => {
-    if (isOpen && !image.largeThumbnail) {
-      onLoadThumbnail(image.id, THUMBNAIL_SIZES.LARGE.name);
-    }
-  }, [isOpen, image.id, image.largeThumbnail, onLoadThumbnail]);
-
+  // No thumbnail loading needed since we use image.url directly
   if (!isOpen) {
     return null;
   }
@@ -39,7 +29,7 @@ export default function FullscreenPreview({
         }}
         className={styles.closeButton}
         type="button"
-        aria-label="Close fullscreen preview"
+        aria-label="Close fullsize preview"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -47,8 +37,8 @@ export default function FullscreenPreview({
       </button>
 
       <img
-        src={image.largeThumbnail?.url || image.url}
-        alt={image.description || image.title || 'Fullscreen image'}
+        src={image.url}
+        alt={image.description || image.title || 'Fullsize image'}
         className={styles.image}
         onClick={(e) => e.stopPropagation()}
       />

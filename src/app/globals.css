@@ -5,15 +5,15 @@
    ======================================== */
 
 :root {
-  /* Light Mode Colors */
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --surface: #f8fafc;
-  --surface-hover: #f1f5f9;
-  --border: #e2e8f0;
-  --border-hover: #cbd5e1;
-  --muted: #64748b;
-  --muted-foreground: #475569;
+  /* Dark Mode Colors (Default and Only Theme) */
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --surface: #1e293b;
+  --surface-hover: #334155;
+  --border: #334155;
+  --border-hover: #475569;
+  --muted: #94a3b8;
+  --muted-foreground: #cbd5e1;
   
   /* Brand Colors */
   --primary: #3b82f6;
@@ -26,31 +26,6 @@
   
   /* Focus & Interactive */
   --focus-ring: 0 0 0 2px rgb(59 130 246 / 0.2);
-}
-
-[data-theme="dark"] {
-  /* Dark Mode Colors */
-  --background: #0f172a;
-  --foreground: #f8fafc;
-  --surface: #1e293b;
-  --surface-hover: #334155;
-  --border: #334155;
-  --border-hover: #475569;
-  --muted: #94a3b8;
-  --muted-foreground: #cbd5e1;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
-    --background: #0f172a;
-    --foreground: #f8fafc;
-    --surface: #1e293b;
-    --surface-hover: #334155;
-    --border: #334155;
-    --border-hover: #475569;
-    --muted: #94a3b8;
-    --muted-foreground: #cbd5e1;
-  }
 }
 
 body {

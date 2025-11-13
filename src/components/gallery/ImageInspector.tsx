@@ -30,12 +30,12 @@ export default function ImageInspector({
   onFullscreen,
   onLoadThumbnail
 }: ImageInspectorProps) {
-  // Load medium thumbnail when inspector opens
+  // Load large thumbnail when inspector opens for best quality preview
   useEffect(() => {
-    if (!image.mediumThumbnail) {
-      onLoadThumbnail(image.id, THUMBNAIL_SIZES.MEDIUM.name);
+    if (!image.largeThumbnail) {
+      onLoadThumbnail(image.id, THUMBNAIL_SIZES.LARGE.name);
     }
-  }, [image.id, image.mediumThumbnail, onLoadThumbnail]);
+  }, [image.id, image.largeThumbnail, onLoadThumbnail]);
 
   return (
     <div className={`${styles.panel} ${isInfoInspector ? styles.expanded : ''}`}>
@@ -72,15 +72,16 @@ export default function ImageInspector({
           {!isInfoInspector ? (
             /* Image Preview Mode */
             <div className={styles.imageContainer}>
-              <Image
-                src={image.mediumThumbnail?.url || image.url}
-                alt={image.description || image.title || 'Image preview'}
-                width={image.width}
-                height={image.height}
-                className={`${styles.image} cursor-pointer`}
-                onClick={onFullscreen}
-                unoptimized
-              />
+              <div className={styles.imageWrapper}>
+                <Image
+                  src={image.largeThumbnail?.url || image.mediumThumbnail?.url || image.url}
+                  alt={image.description || image.title || 'Image preview'}
+                  fill
+                  className={`${styles.image} cursor-pointer`}
+                  onClick={onFullscreen}
+                  unoptimized
+                />
+              </div>
             </div>
           ) : (
             /* Details Mode */
