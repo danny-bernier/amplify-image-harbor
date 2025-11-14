@@ -4,11 +4,17 @@
  */
 
 .container {
-  composes: baseContainer from './Common.module.css';
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  height: 100%;
 }
 
 .content {
-  composes: baseContent from './Common.module.css';
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 0.75rem;
 }
 
 .header {
