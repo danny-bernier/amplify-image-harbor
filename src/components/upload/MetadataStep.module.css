@@ -1,0 +1,166 @@
+/**
+ * @fileoverview MetadataStep component styles
+ * Composes base styles from Common.module.css for metadata editing interface.
+ */
+
+.container {
+  composes: baseContainer from './Common.module.css';
+}
+
+.header {
+  composes: baseHeader from './Common.module.css';
+}
+
+.title {
+  composes: baseTitle from './Common.module.css';
+}
+
+.subtitle {
+  composes: baseSubtitle from './Common.module.css';
+}
+
+/* Metadata Grid */
+.metadataGrid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+}
+
+.metadataItem {
+  composes: baseCard from './Common.module.css';
+  display: flex;
+  gap: 1rem;
+}
+
+/* Image Container */
+.imageContainer {
+  flex-shrink: 0;
+  width: 100px;
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--muted);
+  border: 1px solid var(--border);
+}
+
+/* Form Section */
+.formSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.formField {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.fieldLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+  flex-shrink: 0;
+  width: 70px;
+  padding-top: 0.75rem;
+}
+
+.fieldInput {
+  composes: baseInput from './Common.module.css';
+  flex: 1;
+}
+
+.fieldTextarea {
+  composes: baseTextarea from './Common.module.css';
+  flex: 1;
+}
+
+/* Tag Input */
+.tagInput {
+  composes: baseInput from './Common.module.css';
+  flex: 1;
+}
+
+.tagHelp {
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+  margin-top: 0.25rem;
+}
+
+/* Navigation */
+.navigation {
+  composes: baseNavigation from './Common.module.css';
+}
+
+.navigationGroup {
+  composes: baseNavigationGroup from './Common.module.css';
+}
+
+.prevButton {
+  composes: baseSecondaryButton from './Common.module.css';
+}
+
+.nextButton {
+  composes: basePrimaryButton from './Common.module.css';
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .metadataGrid {
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  }
+  
+  .metadataItem {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .imageContainer {
+    width: 120px;
+  }
+  
+  .imageWrapper {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .formField {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .fieldLabel {
+    width: auto;
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .metadataGrid {
+    gap: 0.75rem;
+    grid-template-columns: 1fr;
+    margin: 0 -1.5rem;
+  }
+  
+  .metadataItem {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+  
+  .imageContainer {
+    width: 100px;
+  }
+  
+  .imageWrapper {
+    width: 100px;
+    height: 100px;
+  }
+}

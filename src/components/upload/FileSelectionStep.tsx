@@ -14,6 +14,7 @@ import { useDropzone } from 'react-dropzone';
 import Image from 'next/image';
 import { SelectedFile } from './UploadWizard';
 import { ConfirmationModal } from '../ConfirmationModal';
+import styles from './FileSelectionStep.module.css';
 
 interface FileSelectionStepProps {
   selectedFiles: SelectedFile[];
@@ -80,28 +81,28 @@ export function FileSelectionStep({ selectedFiles, onFilesChange, onNext }: File
   const canProceed = selectedFiles.length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className={styles.container}>
       {/* Selected Images Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="heading-secondary">
+      <div className={styles.content}>
+        <div className={styles.header}>
+          <h3 className={styles.title}>
             Selected Images ({selectedFiles.length})
           </h3>
           {selectedFiles.length > 0 && (
             <button 
               onClick={handleClearAllClick}
-              className="btn-danger text-sm"
+              className={styles.clearButton}
             >
               Clear All
             </button>
           )}
         </div>
         
-        <div className="file-grid">
+        <div className={styles.fileGrid}>
           {/* Selected Files */}
           {selectedFiles.map((selectedFile) => (
-            <div key={selectedFile.id} className="file-preview">
-              <div className="aspect-square rounded-lg overflow-hidden">
+            <div key={selectedFile.id} className={styles.filePreview}>
+              <div className={styles.imageWrapper}>
                 <Image
                   src={selectedFile.preview}
                   alt={selectedFile.file.name}
@@ -115,18 +116,18 @@ export function FileSelectionStep({ selectedFiles, onFilesChange, onNext }: File
               {/* Remove button */}
               <button
                 onClick={() => removeFile(selectedFile.id)}
-                className="file-remove"
+                className={styles.fileRemove}
                 title="Remove image"
               >
                 ×
               </button>
               
               {/* File info */}
-              <div className="mt-2 px-2">
-                <p className="text-caption truncate" title={selectedFile.file.name}>
+              <div className={styles.fileInfo}>
+                <p className={styles.fileName} title={selectedFile.file.name}>
                   {selectedFile.file.name}
                 </p>
-                <p className="text-xs text-muted">
+                <p className={styles.fileSize}>
                   {(selectedFile.file.size / 1024 / 1024).toFixed(1)} MB
                 </p>
               </div>
@@ -136,15 +137,14 @@ export function FileSelectionStep({ selectedFiles, onFilesChange, onNext }: File
           {/* Add More Dropzone Box */}
           <div
             {...getRootProps()}
-            className={`file-preview cursor-pointer transition-all ${isDragActive || dragActive ? 'border-primary bg-surface' : 'border-dashed'}`}
-            style={{ borderStyle: 'dashed' }}
+            className={`${styles.filePreview} ${styles.dropZone} ${isDragActive || dragActive ? styles.active : ''}`}
           >
             <input {...getInputProps()} />
             
-            <div className="aspect-square rounded-lg flex items-center justify-center">
-              <div className="text-center">
+            <div className={styles.dropZoneContent}>
+              <div className={styles.dropZoneInner}>
                 <svg 
-                  className="w-8 h-8 text-muted mx-auto mb-2" 
+                  className={styles.dropZoneIcon} 
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24" 
@@ -157,15 +157,15 @@ export function FileSelectionStep({ selectedFiles, onFilesChange, onNext }: File
                   />
                 </svg>
                 
-                <p className="text-caption font-medium">
+                <p className={styles.dropZoneText}>
                   {isDragActive || dragActive ? 'Drop here' : 'Add images'}
                 </p>
               </div>
             </div>
             
             {/* Info text below */}
-            <div className="mt-2 px-2">
-              <p className="text-caption text-center">
+            <div className={styles.fileInfo}>
+              <p className={styles.dropZoneSubtext}>
                 Click or drag & drop
               </p>
             </div>
@@ -173,28 +173,30 @@ export function FileSelectionStep({ selectedFiles, onFilesChange, onNext }: File
         </div>
         
         {selectedFiles.length === 0 && (
-          <div className="text-center py-8 text-muted">
+          <div className={styles.emptyState}>
             <p>Click the + box above to select your first images</p>
-            <p className="text-caption mt-1">Supports JPEG, PNG, TIFF, and RAW formats (CR2, NEF, ARW, DNG, etc.)</p>
+            <p className={styles.dropZoneSubtext}>Supports JPEG, PNG, TIFF, and RAW formats (CR2, NEF, ARW, DNG, etc.)</p>
           </div>
         )}
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between items-center pt-6 border-t">
+      <div className={styles.navigation}>
         <div>
-          <p className="text-caption">
+          <p className={styles.subtitle}>
             Step 1 of 3: Select the images you want to upload
           </p>
         </div>
         
-        <button
-          onClick={onNext}
-          disabled={!canProceed}
-          className="btn btn-primary"
-        >
-          Next: Add Details
-        </button>
+        <div className={styles.navigationGroup}>
+          <button
+            onClick={onNext}
+            disabled={!canProceed}
+            className={styles.nextButton}
+          >
+            Next: Add Details
+          </button>
+        </div>
       </div>
 
       {/* Confirmation Modal */}

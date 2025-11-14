@@ -1,0 +1,31 @@
+/**
+ * @fileoverview Upload component styles
+ * Composes base styles from Common.module.css for upload page layout.
+ */
+
+.container {
+  composes: baseContainer from './Common.module.css';
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: calc(100vh - 4rem);
+}
+
+.content {
+  composes: baseContent from './Common.module.css';
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+    min-height: calc(100vh - 2rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0.5rem;
+    min-height: calc(100vh - 1rem);
+  }
+}

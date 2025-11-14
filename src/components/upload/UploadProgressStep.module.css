@@ -1,0 +1,98 @@
+/**
+ * @fileoverview UploadProgressStep component styles
+ * Composes base styles from Common.module.css for upload progress interface.
+ */
+
+.container {
+  composes: baseContainer from './Common.module.css';
+}
+
+.header {
+  composes: baseHeader from './Common.module.css';
+}
+
+.title {
+  composes: baseTitle from './Common.module.css';
+}
+
+.subtitle {
+  composes: baseSubtitle from './Common.module.css';
+}
+
+/* Overall Progress Section */
+.overallProgress {
+  composes: baseProgressContainer from './Common.module.css';
+}
+
+.progressHeader {
+  composes: baseProgressHeader from './Common.module.css';
+}
+
+.progressLabel {
+  composes: baseCaption from './Common.module.css';
+}
+
+.progressPercentage {
+  composes: baseCaption from './Common.module.css';
+}
+
+.progressBar {
+  composes: baseProgressBar from './Common.module.css';
+}
+
+.progressFill {
+  composes: baseProgressFill from './Common.module.css';
+  transition: all 0.3s ease;
+}
+
+.progressFillPrimary {
+  composes: progressFill;
+  background: var(--primary);
+}
+
+.progressFillSuccess {
+  composes: progressFill;
+  background: var(--success);
+}
+
+.progressFillWarning {
+  composes: progressFill;
+  background: var(--warning);
+}
+
+/* File List */
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 24rem;
+  overflow-y: auto;
+}
+
+/* Navigation */
+.navigation {
+  composes: baseNavigation from './Common.module.css';
+}
+
+.navigationGroup {
+  composes: baseNavigationGroup from './Common.module.css';
+}
+
+.prevButton {
+  composes: baseSecondaryButton from './Common.module.css';
+}
+
+.startButton {
+  composes: basePrimaryButton from './Common.module.css';
+}
+
+.completeButton {
+  composes: basePrimaryButton from './Common.module.css';
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .fileList {
+    max-height: 20rem;
+  }
+}

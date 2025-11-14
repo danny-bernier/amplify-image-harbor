@@ -1,0 +1,240 @@
+/**
+ * @fileoverview Common styles for upload components
+ * Provides base classes that can be composed by upload-specific components.
+ * 
+ * @author Danny Bernier
+ * @version 1.0.0
+ */
+
+/* Base Layout Classes */
+.baseContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.baseHeader {
+  text-align: center;
+}
+
+.baseContent {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Base Button Classes */
+.basePrimaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid var(--primary);
+}
+
+.basePrimaryButton:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.basePrimaryButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.baseSecondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+
+.baseSecondaryButton:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+}
+
+.baseSecondaryButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.baseDangerButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  background: var(--danger);
+  color: var(--primary-foreground);
+  border: 1px solid var(--danger);
+}
+
+.baseDangerButton:hover {
+  background: var(--danger-hover);
+  border-color: var(--danger-hover);
+}
+
+.baseDangerButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Base Form Classes */
+.baseFormField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.baseLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.baseInput {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  transition: border-color 0.2s ease;
+}
+
+.baseInput:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+}
+
+.baseTextarea {
+  composes: baseInput;
+  resize: vertical;
+  min-height: 4rem;
+}
+
+/* Base Grid Classes */
+.baseGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Base Card Classes */
+.baseCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: all 0.2s ease;
+}
+
+.baseCard:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+}
+
+/* Base Progress Classes */
+.baseProgressContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.baseProgressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.baseProgressBar {
+  width: 100%;
+  height: 0.75rem;
+  background: var(--border);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.baseProgressFill {
+  height: 100%;
+  border-radius: 0.375rem;
+  transition: width 0.3s ease;
+}
+
+.baseProgressFillPrimary {
+  composes: baseProgressFill;
+  background: var(--primary);
+}
+
+.baseProgressFillSuccess {
+  composes: baseProgressFill;
+  background: var(--success);
+}
+
+.baseProgressFillWarning {
+  composes: baseProgressFill;
+  background: var(--warning);
+}
+
+/* Base Navigation Classes */
+.baseNavigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.baseNavigationGroup {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Base Text Classes */
+.baseTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.baseSubtitle {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin-top: 0.5rem;
+}
+
+.baseCaption {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .baseContainer {
+    gap: 1rem;
+  }
+  
+  .baseNavigation {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .baseNavigationGroup {
+    justify-content: center;
+  }
+}

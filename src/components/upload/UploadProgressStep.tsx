@@ -10,11 +10,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { SelectedFile, FileMetadata } from './UploadWizard';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import { logger } from '@/utils/logger';
 import { uploadService } from '@/services/uploadService';
+import { LoadingBar } from '@/components/common';
+import styles from './UploadProgressStep.module.css';
 
 // Create component-specific logger
 const log = logger.forComponent('UploadProgressStep');
@@ -66,7 +67,7 @@ export function UploadProgressStep({
 
   const uploadSingleFile = async (file: SelectedFile): Promise<void> => {
     const fileId = file.id;
-    updateUploadStatus(fileId, { status: 'uploading' });
+    updateUploadStatus(fileId, { status: 'uploading', progress: 0 });
 
     try {
       // Direct service calls (full client-side)
@@ -92,10 +93,6 @@ export function UploadProgressStep({
 
     // Use uploadService directly (client-side processing)
     log.devDebug(`Starting direct service upload for file: ${file.file.name}`);
-
-    // Note: uploadService.processImageUploads doesn't support progress tracking
-    // This is a limitation of the direct approach for individual files
-    updateUploadStatus(fileId, { progress: 50 }); // Simulate progress
 
     const result = await uploadService.processImageUploads(
       [file.file],
@@ -146,15 +143,34 @@ export function UploadProgressStep({
   const getStatusIcon = (status: UploadStatus['status']) => {
     switch (status) {
       case 'pending':
-        return '⏳';
+        return (
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{ color: '#6b7280' }}>
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+            <path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5z"/>
+          </svg>
+        );
       case 'uploading':
-        return '🔄';
+        return (
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{ color: '#3b82f6' }}>
+            <path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09zM4.157 8.5H7a.5.5 0 0 1 .478.647L6.11 13.59l5.732-6.09H9a.5.5 0 0 1-.478-.647L9.89 2.41 4.157 8.5z"/>
+          </svg>
+        );
       case 'success':
-        return '✅';
+        return (
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{ color: '#10b981' }}>
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+            <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+          </svg>
+        );
       case 'error':
-        return '❌';
+        return (
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{ color: '#ef4444' }}>
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+          </svg>
+        );
       default:
-        return '⏳';
+        return null;
     }
   };
 
@@ -173,6 +189,33 @@ export function UploadProgressStep({
     }
   };
 
+  const getLoadingBarVariant = (status: UploadStatus['status']): 'primary' | 'success' | 'danger' => {
+    switch (status) {
+      case 'success':
+        return 'success';
+      case 'error':
+        return 'danger';
+      default:
+        return 'primary';
+    }
+  };
+
+  const getDetailsText = (status: UploadStatus) => {
+    if (status.status === 'error' && status.error) {
+      return status.error;
+    }
+    
+    if (status.status === 'success') {
+      return 'Upload complete!';
+    }
+    
+    if (status.status === 'uploading') {
+      return 'Uploading...';
+    }
+    
+    return 'Queued for upload...';
+  };
+
   const allCompleted = Object.values(uploadStatuses).every(status =>
     status.status === 'success' || status.status === 'error'
   );
@@ -186,11 +229,11 @@ export function UploadProgressStep({
   ).length;
 
   return (
-    <div className="space-y-6">
+    <div className={styles.container}>
       {/* Header */}
-      <div className="text-center">
-        <h3 className="heading-secondary">Upload Progress</h3>
-        <p className="text-caption mt-2">
+      <div className={styles.header}>
+        <h3 className={styles.title}>Upload Progress</h3>
+        <p className={styles.subtitle}>
           {allCompleted
             ? `Upload completed: ${successCount} successful, ${errorCount} failed`
             : `Uploading ${selectedFiles.length} images to your gallery...`
@@ -199,120 +242,67 @@ export function UploadProgressStep({
       </div>
 
       {/* Overall Progress */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-caption">Overall Progress</span>
-          <span className="text-caption">{overallProgress}%</span>
+      <div className={styles.overallProgress}>
+        <div className={styles.progressHeader}>
+          <span className={styles.progressLabel}>Overall Progress</span>
+          <span className={styles.progressPercentage}>{overallProgress}%</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
+        <div className={styles.progressBar}>
           <div
-            className={`h-3 rounded-full transition-all duration-300 ${allCompleted
+            className={allCompleted
                 ? errorCount > 0
-                  ? 'bg-yellow-500'
-                  : 'bg-green-500'
-                : 'bg-blue-500'
-              }`}
+                  ? styles.progressFillWarning
+                  : styles.progressFillSuccess
+                : styles.progressFillPrimary
+              }
             style={{ width: `${overallProgress}%` }}
           />
         </div>
       </div>
 
       {/* Individual File Progress */}
-      <div className="space-y-3 max-h-96 overflow-y-auto">
+      <div className={styles.fileList}>
         {selectedFiles.map((file) => {
           const status = uploadStatuses[file.id];
           if (!status) return null;
 
           return (
-            <div key={file.id} className="border rounded-lg p-4 space-y-3">
-              <div className="flex items-start space-x-4">
-                {/* Thumbnail */}
-                <div className="flex-shrink-0">
-                  <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden border">
-                    <Image
-                      src={file.preview}
-                      alt={file.file.name}
-                      width={64}
-                      height={64}
-                      className="w-full h-full object-cover"
-                      unoptimized
-                    />
-                  </div>
-                </div>
-
-                {/* File Info and Status */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium truncate">
-                      {file.file.name}
-                    </p>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lg">{getStatusIcon(status.status)}</span>
-                      <span className="text-sm text-caption">
-                        {getStatusText(status.status)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Progress Bar */}
-                  {status.status === 'uploading' && (
-                    <div className="mt-2">
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${status.progress}%` }}
-                        />
-                      </div>
-                      <p className="text-xs text-caption mt-1">
-                        {status.progress}%
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Error Message */}
-                  {status.status === 'error' && status.error && (
-                    <p className="text-sm text-red-600 mt-1">
-                      {status.error}
-                    </p>
-                  )}
-
-                  {/* Metadata Preview */}
-                  {status.status === 'success' && fileMetadata[file.id] && (
-                    <div className="mt-2 text-xs text-caption">
-                      {fileMetadata[file.id].title && (
-                        <p>Title: {fileMetadata[file.id].title}</p>
-                      )}
-                      {fileMetadata[file.id].tags && fileMetadata[file.id].tags!.length > 0 && (
-                        <p>Tags: {fileMetadata[file.id].tags!.join(', ')}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <LoadingBar
+              key={file.id}
+              title={file.file.name}
+              progress={status.progress}
+              statusIcon={getStatusIcon(status.status)}
+              status={getStatusText(status.status)}
+              imageUrl={file.preview}
+              imageAlt={file.file.name}
+              details={getDetailsText(status)}
+              variant={getLoadingBarVariant(status.status)}
+              isComplete={status.status === 'success'}
+              hasError={status.status === 'error'}
+            />
           );
         })}
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-between items-center pt-6 border-t">
+      <div className={styles.navigation}>
         <button
           onClick={onPrev}
           disabled={isUploading}
-          className="btn-secondary"
+          className={styles.prevButton}
         >
           ← Back to Metadata
         </button>
 
-        <div className="space-x-4">
+        <div className={styles.navigationGroup}>
           {!isUploading && !allCompleted && (
-            <button onClick={startUpload} className="btn-primary">
+            <button onClick={startUpload} className={styles.startButton}>
               Start Upload
             </button>
           )}
 
           {allCompleted && (
-            <button onClick={onComplete} className="btn-primary">
+            <button onClick={onComplete} className={styles.completeButton}>
               {errorCount > 0 ? 'Continue with Successful Uploads' : 'Complete & View Gallery'}
             </button>
           )}

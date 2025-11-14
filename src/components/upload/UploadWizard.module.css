@@ -1,0 +1,114 @@
+/**
+ * @fileoverview UploadWizard component styles
+ * Composes base styles from Common.module.css for wizard layout.
+ */
+
+.container {
+  composes: baseContainer from './Common.module.css';
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.content {
+  composes: baseContent from './Common.module.css';
+}
+
+/* Step Indicator */
+.stepIndicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: var(--surface);
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+}
+
+.step.active {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.step.completed {
+  background: var(--success);
+  color: var(--primary-foreground);
+}
+
+.step.pending {
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+
+.stepNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.stepLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.stepSeparator {
+  width: 2rem;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Step Content */
+.stepContent {
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .stepIndicator {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .stepSeparator {
+    width: 1px;
+    height: 1rem;
+  }
+  
+  .stepContent {
+    min-height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .step {
+    padding: 0.375rem 0.75rem;
+  }
+  
+  .stepLabel {
+    font-size: 0.8125rem;
+  }
+  
+  .stepNumber {
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.6875rem;
+  }
+}

@@ -1,0 +1,186 @@
+/**
+ * @fileoverview FileSelectionStep component styles
+ * Composes base styles from Common.module.css for file selection interface.
+ */
+
+.container {
+  composes: baseContainer from './Common.module.css';
+}
+
+.content {
+  composes: baseContent from './Common.module.css';
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.title {
+  composes: baseTitle from './Common.module.css';
+}
+
+.clearButton {
+  composes: baseDangerButton from './Common.module.css';
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+}
+
+/* File Grid */
+.fileGrid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  grid-template-columns: repeat(auto-fill, 150px);
+  justify-content: center;
+}
+
+/* File Preview Item */
+.filePreview {
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  aspect-ratio: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.filePreview:hover {
+  border-color: var(--border-hover);
+  background: var(--surface-hover);
+}
+
+.filePreview:hover .fileRemove {
+  opacity: 1;
+}
+
+/* Upload Drop Zone */
+.filePreview.dropZone {
+  cursor: pointer;
+  border-style: dashed;
+}
+
+.filePreview.dropZone.active {
+  border-color: var(--primary);
+  background: var(--surface-hover);
+}
+
+.imageWrapper {
+  aspect-ratio: 1;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.fileRemove {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  background: var(--danger);
+  color: white;
+  opacity: 0;
+}
+
+.fileInfo {
+  margin-top: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.fileName {
+  composes: baseCaption from './Common.module.css';
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileSize {
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+
+/* Drop Zone Content */
+.dropZoneContent {
+  aspect-ratio: 1;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropZoneInner {
+  text-align: center;
+}
+
+.dropZoneIcon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--muted);
+  margin: 0 auto 0.5rem;
+}
+
+.dropZoneText {
+  composes: baseCaption from './Common.module.css';
+  font-weight: 500;
+}
+
+.dropZoneSubtext {
+  composes: baseCaption from './Common.module.css';
+  text-align: center;
+}
+
+/* Empty State */
+.emptyState {
+  text-align: center;
+  padding: 2rem;
+  color: var(--muted);
+}
+
+/* Navigation */
+.navigation {
+  composes: baseNavigation from './Common.module.css';
+}
+
+.navigationGroup {
+  composes: baseNavigationGroup from './Common.module.css';
+}
+
+.nextButton {
+  composes: basePrimaryButton from './Common.module.css';
+}
+
+.subtitle {
+  composes: baseSubtitle from './Common.module.css';
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .fileGrid {
+    grid-template-columns: repeat(auto-fill, 120px);
+    gap: 0.75rem;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .fileGrid {
+    grid-template-columns: repeat(auto-fill, 100px);
+    gap: 0.5rem;
+  }
+}

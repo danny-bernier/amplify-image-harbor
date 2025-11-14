@@ -12,6 +12,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { SelectedFile, FileMetadata } from './UploadWizard';
+import styles from './MetadataStep.module.css';
 
 interface MetadataStepProps {
   selectedFiles: SelectedFile[];
@@ -136,27 +137,27 @@ export function MetadataStep({
   }
 
   return (
-    <div className="space-y-6">
+    <div className={styles.container}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="heading-secondary">
+      <div className={styles.header}>
+        <h3 className={styles.title}>
           Add Details ({selectedFiles.length} images)
         </h3>
-        <div className="text-caption">
+        <div className={styles.subtitle}>
           Step 2 of 3: Add details for each image (optional)
         </div>
       </div>
 
       {/* Images Grid */}
-      <div className="metadata-grid">
+      <div className={styles.metadataGrid}>
         {selectedFiles.map((file, index) => {
           const metadata = fileMetadata[file.id] || {};
           const tagInput = tagInputs[file.id] || '';
           
           return (
-            <div key={file.id} className="metadata-item">
+            <div key={file.id} className={styles.metadataItem}>
               {/* Image Preview */}
-              <div className="metadata-image-container">
+              <div className={styles.imageContainer}>
                 <div className="aspect-square rounded-lg overflow-hidden bg-surface border border-border">
                   <Image
                     src={file.preview}
