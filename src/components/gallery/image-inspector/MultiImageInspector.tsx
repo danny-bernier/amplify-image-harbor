@@ -14,6 +14,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { GalleryImage } from '@/types/gallery';
 import { getThumbnailForTargetSize } from '@/utils/thumbnailUtils';
 import ImageInspectorControlBar from './ImageInspectorControlBar';
+import FullscreenPreview from '@/components/common/FullscreenPreview';
 import styles from './MultiImageInspector.module.css';
 
 interface MultiImageInspectorProps {
@@ -21,16 +22,19 @@ interface MultiImageInspectorProps {
   onClearSelection: () => void;
   onShare: (images: GalleryImage[]) => void;
   onDelete: (images: GalleryImage[]) => void;
+  onRemoveImage?: (image: GalleryImage) => void;
 }
 
 export default function MultiImageInspector({ 
   selectedImages, 
   onClearSelection,
   onShare,
-  onDelete
+  onDelete,
+  onRemoveImage
 }: MultiImageInspectorProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [fullscreenImage, setFullscreenImage] = useState<GalleryImage | null>(null);
 
   const handleShare = () => {
     console.log('Share button clicked for images:', selectedImages.map(img => ({ id: img.id, title: img.title })));
@@ -90,6 +94,14 @@ export default function MultiImageInspector({
     return getThumbnailForTargetSize(image, itemWidth);
   }, [containerWidth, calculatePreviewItemWidth]);
 
+  const handleImageClick = (image: GalleryImage) => {
+    setFullscreenImage(image);
+  };
+
+  const handleCloseFullscreen = () => {
+    setFullscreenImage(null);
+  };
+
   return (
     <div className={styles.panel}>
       <div className={styles.previewWrapper}>
@@ -107,7 +119,12 @@ export default function MultiImageInspector({
           <div ref={gridRef} className={styles.previewGrid}>
             {selectedImages.map((image) => (
               <div key={image.id} className={styles.previewItem}>
-                <div className={styles.previewImageWrapper}>
+                <div 
+                  className={styles.previewImageWrapper} 
+                  onClick={() => handleImageClick(image)}
+                  style={{ cursor: 'pointer' }}
+                  title="Click to view fullscreen"
+                >
                   <Image
                     src={getPreviewThumbnail(image).url}
                     alt={image.title || 'Selected image'}
@@ -115,6 +132,33 @@ export default function MultiImageInspector({
                     className={styles.previewImage}
                     unoptimized
                   />
+                  {onRemoveImage && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveImage(image);
+                      }}
+                      className={styles.removeButton}
+                      title="Remove from selection"
+                      type="button"
+                    >
+                      <svg 
+                        width="12" 
+                        height="12" 
+                        viewBox="0 0 12 12" 
+                        fill="none" 
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path 
+                          d="M9 3L3 9M3 3L9 9" 
+                          stroke="currentColor" 
+                          strokeWidth="1.5" 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  )}
                 </div>
                 <div className={styles.previewTitle}>
                   {image.title || 'Untitled'}
@@ -124,6 +168,16 @@ export default function MultiImageInspector({
           </div>
         </div>
       </div>
+      
+      {/* Fullscreen Preview */}
+      {fullscreenImage && (
+        <FullscreenPreview
+          url={fullscreenImage.url}
+          altText={fullscreenImage.description || fullscreenImage.title || 'Image preview'}
+          isOpen={true}
+          onClose={handleCloseFullscreen}
+        />
+      )}
     </div>
   );
 }

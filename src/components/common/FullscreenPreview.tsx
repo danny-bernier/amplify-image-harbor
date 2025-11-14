@@ -1,20 +1,20 @@
 'use client';
 
-import { GalleryImage } from '@/types/gallery';
 import styles from './FullscreenPreview.module.css';
 
 interface FullscreenPreviewProps {
-  image: GalleryImage;
+  url: string;
+  altText: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
 export default function FullscreenPreview({ 
-  image, 
+  url, 
+  altText, 
   isOpen, 
   onClose
 }: FullscreenPreviewProps) {
-  // No thumbnail loading needed since we use image.url directly
   if (!isOpen) {
     return null;
   }
@@ -31,14 +31,14 @@ export default function FullscreenPreview({
         type="button"
         aria-label="Close fullsize preview"
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className={styles.buttonIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
 
       <img
-        src={image.url}
-        alt={image.description || image.title || 'Fullsize image'}
+        src={url}
+        alt={altText}
         className={styles.image}
         onClick={(e) => e.stopPropagation()}
       />

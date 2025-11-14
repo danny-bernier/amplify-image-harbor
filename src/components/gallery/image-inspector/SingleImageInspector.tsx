@@ -11,9 +11,9 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
-import { THUMBNAIL_SIZES } from '@/types/thumbnail';
 import { GalleryImage } from '@/types/gallery';
 import ImageInspectorControlBar from './ImageInspectorControlBar';
+import FullscreenPreview from '@/components/common/FullscreenPreview';
 import styles from './SingleImageInspector.module.css';
 
 interface SingleImageInspectorProps {
@@ -21,8 +21,6 @@ interface SingleImageInspectorProps {
   onClose: () => void;
   onShare: (image: GalleryImage) => void;
   onDelete: (image: GalleryImage) => void;
-  onPrevious?: () => void;
-  onNext?: () => void;
 }
 
 // Helper function to format dates
@@ -45,10 +43,9 @@ export default function SingleImageInspector({
   image, 
   onClose, 
   onShare,
-  onDelete,
-  onPrevious,
-  onNext
+  onDelete
 }: SingleImageInspectorProps) {
+  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const [isInfoExpanded, setIsInfoExpanded] = useState(false);
 
   return (
@@ -69,7 +66,7 @@ export default function SingleImageInspector({
           {!isInfoExpanded ? (
             /* Image Preview Mode */
             <div className={styles.imageContainer}>
-              <div className={styles.imageWrapper}>
+              <div className={styles.imageWrapper} onClick={() => setIsFullscreenOpen(true)} style={{ cursor: 'pointer' }}>
                 <Image
                   src={image.largeThumbnail?.url || image.mediumThumbnail?.url || image.url}
                   alt={image.description || image.title || 'Image preview'}
@@ -85,29 +82,29 @@ export default function SingleImageInspector({
         {/* Description in expanded mode */}
         {image.description && (
           <div className={styles.section}>
-            <h3 className="text-primary mb-2">Description:</h3>
-            <p className="text-caption">{image.description}</p>
+            <h3 className={styles.sectionTitle}>Description:</h3>
+            <p className={styles.description}>{image.description}</p>
           </div>
         )}
         
         {/* Basic Info */}
         <div className={styles.section}>
-          <div className="space-y-2 text-sm">
-            <div>
-              <span className="text-secondary font-medium">Dimensions:</span>
-              <span className="ml-2">{image.width} × {image.height} pixels</span>
+          <div className={styles.infoList}>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>Dimensions:</span>
+              <span className={styles.infoValue}>{image.width} × {image.height} pixels</span>
             </div>
-            <div>
-              <span className="text-secondary font-medium">Aspect Ratio:</span>
-              <span className="ml-2">{(image.width / image.height).toFixed(2)}:1</span>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>Aspect Ratio:</span>
+              <span className={styles.infoValue}>{(image.width / image.height).toFixed(2)}:1</span>
             </div>
-            <div>
-              <span className="text-secondary font-medium">Created:</span>
-              <span className="ml-2">{formatDate(image.created)}</span>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>Created:</span>
+              <span className={styles.infoValue}>{formatDate(image.created)}</span>
             </div>
-            <div>
-              <span className="text-secondary font-medium">Last Updated:</span>
-              <span className="ml-2">{formatDate(image.lastUpdated)}</span>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>Last Updated:</span>
+              <span className={styles.infoValue}>{formatDate(image.lastUpdated)}</span>
             </div>
           </div>
         </div>
@@ -115,10 +112,10 @@ export default function SingleImageInspector({
         {/* Regular Tags */}
         {image.tags && image.tags.length > 0 && (
           <div className={styles.section}>
-            <h3 className="text-primary mb-2">Tags:</h3>
-            <div className="flex flex-wrap gap-2">
+            <h3 className={styles.sectionTitle}>Tags:</h3>
+            <div className={styles.tagList}>
               {image.tags.map((tag, index) => (
-                <span key={index} className="tag-item">
+                <span key={index} className={styles.tagItem}>
                   {tag}
                 </span>
               ))}
@@ -129,10 +126,10 @@ export default function SingleImageInspector({
         {/* Structured Tags (Key-Value Pairs) */}
         {image.jsonTags && Object.keys(image.jsonTags).length > 0 && (
           <div className={styles.section}>
-            <h3 className="text-primary mb-2">Structured Tags:</h3>
-            <div className="flex flex-wrap gap-2">
+            <h3 className={styles.sectionTitle}>Structured Tags:</h3>
+            <div className={styles.tagList}>
               {Object.entries(image.jsonTags).map(([key, value], index) => (
-                <span key={index} className="tag-item">
+                <span key={index} className={styles.tagItem}>
                   {key}: {typeof value === 'object' ? JSON.stringify(value) : String(value)}
                 </span>
               ))}
@@ -142,14 +139,14 @@ export default function SingleImageInspector({
 
         {/* File Info */}
         <div className={styles.section}>
-          <div className="space-y-2 text-sm">
-            <div>
-              <span className="text-secondary font-medium">S3 Key:</span>
-              <span className="ml-2 font-mono text-xs break-all">{image.s3Key}</span>
+          <div className={styles.infoList}>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>S3 Key:</span>
+              <span className={`${styles.infoValue} ${styles.codeText}`}>{image.s3Key}</span>
             </div>
-            <div>
-              <span className="text-secondary font-medium">Image ID:</span>
-              <span className="ml-2 font-mono text-xs">{image.id}</span>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>Image ID:</span>
+              <span className={`${styles.infoValue} ${styles.codeText}`}>{image.id}</span>
             </div>
           </div>
         </div>
@@ -157,6 +154,14 @@ export default function SingleImageInspector({
           )}
         </div>
       </div>
+
+      {/* Fullscreen Preview */}
+      <FullscreenPreview
+        url={image.url}
+        altText={image.description || image.title || 'Image preview'}
+        isOpen={isFullscreenOpen}
+        onClose={() => setIsFullscreenOpen(false)}
+      />
     </div>
   );
 }

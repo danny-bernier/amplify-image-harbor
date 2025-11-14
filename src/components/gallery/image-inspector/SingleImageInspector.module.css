@@ -105,3 +105,59 @@
 .section {
   margin-bottom: 1rem;
 }
+
+/* Typography classes */
+.sectionTitle {
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.description {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.infoList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.infoItem {
+  display: flex;
+  align-items: flex-start;
+}
+
+.infoLabel {
+  color: var(--muted-foreground);
+  font-weight: 500;
+  min-width: 7rem;
+}
+
+.infoValue {
+  margin-left: 0.5rem;
+  color: var(--foreground);
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tagItem {
+  background: var(--muted);
+  color: var(--muted-foreground);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.codeText {
+  font-family: monospace;
+  font-size: 0.75rem;
+  word-break: break-all;
+}

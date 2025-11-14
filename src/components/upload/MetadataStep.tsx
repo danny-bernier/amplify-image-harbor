@@ -12,6 +12,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { SelectedFile, FileMetadata } from './UploadWizard';
+import FullscreenPreview from '@/components/common/FullscreenPreview';
 import styles from './MetadataStep.module.css';
 
 interface MetadataStepProps {
@@ -26,6 +27,16 @@ export function MetadataStep({
   onMetadataChange 
 }: MetadataStepProps) {
   const [tagInputs, setTagInputs] = useState<Record<string, string>>({});
+  const [fullscreenImage, setFullscreenImage] = useState<{ url: string; altText: string } | null>(null);
+
+  const handleImageClick = (file: SelectedFile) => {
+    const metadata = fileMetadata[file.id];
+    const altText = metadata?.title || metadata?.description || file.file.name;
+    setFullscreenImage({
+      url: file.preview,
+      altText: altText
+    });
+  };
 
   const updateMetadata = (fileId: string, field: keyof FileMetadata, value: any) => {
     const currentMetadata = fileMetadata[fileId] || {};
@@ -142,7 +153,11 @@ export function MetadataStep({
             <div key={file.id} className={styles.metadataItem}>
               {/* Image Preview */}
               <div className={styles.imageContainer}>
-                <div className={styles.imageWrapper}>
+                <div 
+                  className={styles.imageWrapper}
+                  onClick={() => handleImageClick(file)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <Image
                     src={file.preview}
                     alt={file.file.name}
@@ -298,6 +313,16 @@ export function MetadataStep({
           />
         </div>
       </div>
+
+      {/* Fullscreen Preview */}
+      {fullscreenImage && (
+        <FullscreenPreview
+          url={fullscreenImage.url}
+          altText={fullscreenImage.altText}
+          isOpen={!!fullscreenImage}
+          onClose={() => setFullscreenImage(null)}
+        />
+      )}
     </div>
   );
 }

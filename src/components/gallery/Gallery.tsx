@@ -242,6 +242,10 @@ export default function Gallery() {
     setSelectedImage(null);
   };
 
+  const handleRemoveImage = (imageToRemove: GalleryImage) => {
+    setSelectedImages(prev => prev.filter(img => img.id !== imageToRemove.id));
+  };
+
   const handleShareImages = (images: GalleryImage[]) => {
     // Placeholder for share functionality
     console.log('Share images:', images);
@@ -408,8 +412,7 @@ export default function Gallery() {
             onClose={handleClearSelection}
             onShare={handleShareImages}
             onDelete={handleDeleteImages}
-            onPrevious={selectedImage ? handlePreviousImage : undefined}
-            onNext={selectedImage ? handleNextImage : undefined}
+            onRemoveImage={handleRemoveImage}
           />
         </div>
       )}
@@ -417,7 +420,8 @@ export default function Gallery() {
       {/* Fullscreen Preview */}
       {selectedImage && (
         <FullscreenPreview
-          image={selectedImage}
+          url={selectedImage.url}
+          altText={selectedImage.description || selectedImage.title || 'Gallery image'}
           isOpen={isFullscreenOpen}
           onClose={() => setIsFullscreenOpen(false)}
         />

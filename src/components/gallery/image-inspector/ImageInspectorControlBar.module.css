@@ -25,7 +25,7 @@
 }
 
 .closeBtn {
-  composes: baseCloseButton from '../Common.module.css';
+  composes: baseCloseButton from '../../Common.module.css';
 }
 
 .infoToggle {
@@ -41,4 +41,32 @@
 .infoToggle.infoToggleActive:hover {
   background-color: var(--primary-hover);
   border-color: var(--primary-hover);
+}
+
+/* Icon styling */
+.icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Title styling */
+.title {
+  color: var(--muted-foreground);
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Button group container */
+.buttonGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Responsive visibility for info toggle */
+@media (min-width: 1024px) and (orientation: landscape) {
+  .infoToggleHiddenLg {
+    display: none;
+  }
 }

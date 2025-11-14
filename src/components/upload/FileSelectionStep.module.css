@@ -14,7 +14,7 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  padding-right: 0.75rem;
+  padding-right: 0.5rem;
 }
 
 .header {
@@ -45,22 +45,20 @@
 
 /* File Preview Item */
 .filePreview {
+  composes: basePreviewWithRemove from '../Common.module.css';
   position: relative;
   border-radius: 0.5rem;
-  overflow: hidden;
-  aspect-ratio: 1;
+  overflow: visible;
   background: var(--surface);
   border: 1px solid var(--border);
   transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .filePreview:hover {
   border-color: var(--border-hover);
   background: var(--surface-hover);
-}
-
-.filePreview:hover .fileRemove {
-  opacity: 1;
 }
 
 /* Upload Drop Zone */
@@ -76,26 +74,19 @@
 
 .imageWrapper {
   aspect-ratio: 1;
-  border-radius: 0.5rem;
+  border-radius: 0.5rem 0.5rem 0 0;
   overflow: hidden;
+  position: relative;
+}
+
+.previewImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .fileRemove {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-  background: var(--danger);
-  color: white;
-  opacity: 0;
+  composes: baseRemoveButton from '../Common.module.css';
 }
 
 .fileInfo {
@@ -119,7 +110,7 @@
 /* Drop Zone Content */
 .dropZoneContent {
   aspect-ratio: 1;
-  border-radius: 0.5rem;
+  border-radius: 0.5rem 0.5rem 0 0;
   display: flex;
   align-items: center;
   justify-content: center;

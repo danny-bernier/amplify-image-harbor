@@ -10,6 +10,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import styles from './ConfirmationModal.module.css';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ interface ConfirmationModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   confirmButtonClass?: string;
+  cancelButtonClass?: string;
 }
 
 export function ConfirmationModal({
@@ -30,7 +32,8 @@ export function ConfirmationModal({
   cancelText = 'Cancel',
   onConfirm,
   onCancel,
-  confirmButtonClass = 'btn btn-danger'
+  confirmButtonClass = styles.confirmButton,
+  cancelButtonClass = styles.cancelButton
 }: ConfirmationModalProps) {
   // Handle Escape key
   useEffect(() => {
@@ -55,24 +58,24 @@ export function ConfirmationModal({
   if (!isOpen) return null;
 
   return (
-    <div className="confirmation-backdrop" onClick={onCancel}>
+    <div className={styles.backdrop} onClick={onCancel}>
       <div 
-        className="confirmation-modal"
+        className={styles.modal}
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking modal content
       >
-        <h3 className="confirmation-header">{title}</h3>
-        <p className="confirmation-message">{message}</p>
+        <h3 className={styles.header}>{title}</h3>
+        <p className={styles.message}>{message}</p>
         
-        <div className="confirmation-actions">
+        <div className={styles.actions}>
           <button
             onClick={onCancel}
-            className="btn btn-secondary"
+            className={cancelButtonClass}
           >
             {cancelText}
           </button>
           <button
             onClick={onConfirm}
-            className="btn btn-danger-filled"
+            className={confirmButtonClass}
           >
             {confirmText}
           </button>

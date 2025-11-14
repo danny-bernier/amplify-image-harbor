@@ -17,8 +17,7 @@ interface ImageInspectorProps {
   onClose: () => void;
   onShare: (images: GalleryImage[]) => void;
   onDelete: (images: GalleryImage[]) => void;
-  onPrevious?: () => void;
-  onNext?: () => void;
+  onRemoveImage?: (image: GalleryImage) => void;
 }
 
 export default function ImageInspector({
@@ -26,8 +25,7 @@ export default function ImageInspector({
   onClose,
   onShare,
   onDelete,
-  onPrevious,
-  onNext
+  onRemoveImage
 }: ImageInspectorProps) {
   // Determine inspection mode based on selection count
   const isMultiSelection = selectedImages.length > 1;
@@ -40,6 +38,7 @@ export default function ImageInspector({
         onClearSelection={onClose}
         onShare={onShare}
         onDelete={onDelete}
+        onRemoveImage={onRemoveImage}
       />
     );
   }
@@ -51,8 +50,6 @@ export default function ImageInspector({
         onClose={onClose}
         onShare={(image) => onShare([image])}
         onDelete={(image) => onDelete([image])}
-        onPrevious={onPrevious}
-        onNext={onNext}
       />
     );
   }

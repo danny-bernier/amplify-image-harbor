@@ -35,8 +35,14 @@
 
 .metadataItem {
   composes: baseCard from './Common.module.css';
+  background: transparent;
   display: flex;
   gap: 1rem;
+}
+
+.metadataItem:hover {
+  background: transparent;
+  border-color: var(--border);
 }
 
 /* Image Container */
@@ -53,6 +59,12 @@
   overflow: hidden;
   background: var(--muted);
   border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.imageWrapper:hover {
+  transform: scale(1.05);
 }
 
 /* Form Section */
@@ -81,17 +93,32 @@
 .fieldInput {
   composes: baseInput from './Common.module.css';
   flex: 1;
+  border: 1px solid var(--border);
+}
+
+.fieldInput:focus {
+  border-color: var(--primary);
 }
 
 .fieldTextarea {
   composes: baseTextarea from './Common.module.css';
   flex: 1;
+  border: 1px solid var(--border);
+}
+
+.fieldTextarea:focus {
+  border-color: var(--primary);
 }
 
 /* Tag Input */
 .tagInput {
   composes: baseInput from './Common.module.css';
   flex: 1;
+  border: 1px solid var(--border);
+}
+
+.tagInput:focus {
+  border-color: var(--primary);
 }
 
 .tagHelp {

@@ -37,17 +37,22 @@
 }
 
 .previewItem {
+  composes: basePreviewWithRemove from '../../Common.module.css';
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   text-align: center;
 }
 
+.removeButton {
+  composes: baseRemoveButton from '../../Common.module.css';
+}
+
 .previewImageWrapper {
   position: relative;
   aspect-ratio: 1;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
   background-color: var(--color-gray-100);
   border: 1px solid var(--color-border);
   transition: border-color 0.2s ease, transform 0.2s ease;

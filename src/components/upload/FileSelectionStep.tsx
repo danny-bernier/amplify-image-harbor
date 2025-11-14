@@ -13,7 +13,8 @@ import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Image from 'next/image';
 import { SelectedFile } from './UploadWizard';
-import { ConfirmationModal } from '../ConfirmationModal';
+import { ConfirmationModal } from '@/components/common/ConfirmationModal';
+import { ACCEPTED_IMAGE_TYPES } from '@/utils/imageUtils';
 import styles from './FileSelectionStep.module.css';
 
 interface FileSelectionStepProps {
@@ -39,12 +40,7 @@ export function FileSelectionStep({ selectedFiles, onFilesChange }: FileSelectio
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': [
-        '.jpeg', '.jpg', '.png', '.tiff', '.tif',  // Standard formats
-        '.cr2', '.cr3', '.nef', '.arw', '.orf',    // Canon, Nikon, Sony, Olympus RAW
-        '.dng', '.raw', '.rwl', '.rw2',            // Adobe DNG and other RAW formats
-        '.pef', '.srw', '.raf', '.3fr'             // Pentax, Samsung, Fuji, Hasselblad RAW
-      ]
+      'image/*': ACCEPTED_IMAGE_TYPES
     },
     multiple: true,
     onDragEnter: () => setDragActive(true),
@@ -86,7 +82,7 @@ export function FileSelectionStep({ selectedFiles, onFilesChange }: FileSelectio
             Selected Images ({selectedFiles.length})
           </h3>
           {selectedFiles.length > 0 && (
-            <button 
+            <button
               onClick={handleClearAllClick}
               className={styles.clearButton}
             >
@@ -94,7 +90,7 @@ export function FileSelectionStep({ selectedFiles, onFilesChange }: FileSelectio
             </button>
           )}
         </div>
-        
+
         <div className={styles.fileGrid}>
           {/* Selected Files */}
           {selectedFiles.map((selectedFile) => (
@@ -105,20 +101,34 @@ export function FileSelectionStep({ selectedFiles, onFilesChange }: FileSelectio
                   alt={selectedFile.file.name}
                   width={200}
                   height={200}
-                  className="w-full h-full object-cover"
+                  className={styles.previewImage}
                   unoptimized
                 />
               </div>
-              
+
               {/* Remove button */}
               <button
                 onClick={() => removeFile(selectedFile.id)}
                 className={styles.fileRemove}
                 title="Remove image"
               >
-                ×
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M9 3L3 9M3 3L9 9"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </button>
-              
+
               {/* File info */}
               <div className={styles.fileInfo}>
                 <p className={styles.fileName} title={selectedFile.file.name}>
@@ -130,36 +140,36 @@ export function FileSelectionStep({ selectedFiles, onFilesChange }: FileSelectio
               </div>
             </div>
           ))}
-          
+
           {/* Add More Dropzone Box */}
           <div
             {...getRootProps()}
             className={`${styles.filePreview} ${styles.dropZone} ${isDragActive || dragActive ? styles.active : ''}`}
           >
             <input {...getInputProps()} />
-            
+
             <div className={styles.dropZoneContent}>
               <div className={styles.dropZoneInner}>
-                <svg 
-                  className={styles.dropZoneIcon} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24" 
+                <svg
+                  className={styles.dropZoneIcon}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M12 4v16m8-8H4" 
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
                   />
                 </svg>
-                
+
                 <p className={styles.dropZoneText}>
                   {isDragActive || dragActive ? 'Drop here' : 'Add images'}
                 </p>
               </div>
             </div>
-            
+
             {/* Info text below */}
             <div className={styles.fileInfo}>
               <p className={styles.dropZoneSubtext}>
@@ -168,7 +178,7 @@ export function FileSelectionStep({ selectedFiles, onFilesChange }: FileSelectio
             </div>
           </div>
         </div>
-        
+
         {selectedFiles.length === 0 && (
           <div className={styles.emptyState}>
             <p>Click the + box above to select your first images</p>

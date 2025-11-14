@@ -204,35 +204,7 @@ body {
   
 
   
-  /* Confirmation Modal */
-  .confirmation-backdrop {
-    @apply fixed inset-0 z-50 flex items-start justify-center p-4 pt-20;
-    background: rgba(0, 0, 0, 0.5);
-  }
-  
-  .confirmation-modal {
-    background: var(--background);
-    border: 1px solid var(--border);
-    border-radius: 0.75rem;
-    padding: 2rem;
-    max-width: 400px;
-    width: 100%;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  }
-  
-  .confirmation-header {
-    @apply text-xl font-semibold mb-4;
-    color: var(--foreground);
-  }
-  
-  .confirmation-message {
-    @apply mb-6;
-    color: var(--muted);
-  }
-  
-  .confirmation-actions {
-    @apply flex space-x-3 justify-end;
-  }
+
   
   /* Fullscreen Image Modal */
   .fullscreen-modal {
