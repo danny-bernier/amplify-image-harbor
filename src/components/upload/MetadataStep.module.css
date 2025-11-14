@@ -4,7 +4,10 @@
  */
 
 .container {
-  composes: baseContainer from './Common.module.css';
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  height: 100%;
 }
 
 .header {
@@ -24,6 +27,10 @@
   display: grid;
   gap: 1.5rem;
   grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 0.5rem;
 }
 
 .metadataItem {
@@ -88,14 +95,166 @@
 }
 
 .tagHelp {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--muted-foreground);
   margin-top: 0.25rem;
+}
+
+.tagInputContainer {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tagAddButton {
+  composes: baseSecondaryButton from './Common.module.css';
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.tagAddButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tagSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tagSectionTitle {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  margin-bottom: 0.25rem;
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 0.25rem;
+  border: 1px solid;
+}
+
+.tagGeneral {
+  background: rgb(219 234 254);
+  color: rgb(30 64 175);
+  border-color: rgb(147 197 253);
+}
+
+.tagStructured {
+  background: rgb(220 252 231);
+  color: rgb(21 128 61);
+  border-color: rgb(134 239 172);
+}
+
+.tagRemoveButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  color: inherit;
+  opacity: 0.7;
+}
+
+.tagRemoveButton:hover {
+  opacity: 1;
+}
+
+/* Empty state */
+.emptyState {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.emptyStateText {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.emptyStateButton {
+  composes: baseSecondaryButton from './Common.module.css';
+  margin-top: 1rem;
+}
+
+/* File info */
+.fileName {
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileSize {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.fileInfo {
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.imagePreview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Progress Indicator */
+.progressSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.progressLabel {
+  color: var(--muted-foreground);
+}
+
+.progressText {
+  color: var(--muted-foreground);
+}
+
+.progressBar {
+  width: 100%;
+  background: var(--surface);
+  border-radius: 9999px;
+  height: 0.5rem;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.progressFill {
+  background: var(--success);
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
 }
 
 /* Navigation */
 .navigation {
   composes: baseNavigation from './Common.module.css';
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
 }
 
 .navigationGroup {

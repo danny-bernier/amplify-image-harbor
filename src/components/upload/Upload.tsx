@@ -9,10 +9,11 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { FileSelectionStep } from './FileSelectionStep';
 import { MetadataStep } from './MetadataStep';
-import { UploadProgressStep } from './UploadProgressStep';
+import { UploadProgressStep, UploadProgressStepRef } from './UploadProgressStep';
+import styles from './Upload.module.css';
 
 export interface SelectedFile {
   file: File;
@@ -24,20 +25,27 @@ export interface FileMetadata {
   title?: string;
   description?: string;
   tags?: string[];
+  jsonTags?: Record<string, any>;
 }
 
 export interface UploadState {
   selectedFiles: SelectedFile[];
   fileMetadata: Record<string, FileMetadata>;
   currentStep: number;
+  isUploading: boolean;
+  uploadCompleted: boolean;
 }
 
 export default function Upload() {
   const [uploadState, setUploadState] = useState<UploadState>({
     selectedFiles: [],
     fileMetadata: {},
-    currentStep: 1
+    currentStep: 1,
+    isUploading: false,
+    uploadCompleted: false
   });
+
+  const uploadProgressRef = useRef<UploadProgressStepRef>(null);
 
   const updateFiles = (files: SelectedFile[]) => {
     setUploadState(prev => ({
@@ -70,6 +78,18 @@ export default function Upload() {
     }));
   };
 
+  const handleUploadStart = () => {
+    setUploadState(prev => ({ ...prev, isUploading: true }));
+  };
+
+  const handleUploadComplete = () => {
+    setUploadState(prev => ({ ...prev, isUploading: false, uploadCompleted: true }));
+  };
+
+  const startUpload = () => {
+    uploadProgressRef.current?.startUpload();
+  };
+
   const resetUpload = () => {
     // Clean up preview URLs
     uploadState.selectedFiles.forEach(file => {
@@ -79,45 +99,48 @@ export default function Upload() {
     setUploadState({
       selectedFiles: [],
       fileMetadata: {},
-      currentStep: 1
+      currentStep: 1,
+      isUploading: false,
+      uploadCompleted: false
     });
   };
 
   const renderStepIndicator = () => (
-    <div className="wizard-steps">
-      <div className="wizard-step">
-        <div className={`wizard-step-circle ${
-          uploadState.currentStep === 1 ? 'active' : 
-          uploadState.currentStep > 1 ? 'completed' : 'inactive'
+    <div className={styles.wizardSteps}>
+      <div className={styles.wizardStep}>
+        <div className={`${styles.wizardStepCircle} ${
+          uploadState.currentStep === 1 ? styles.active : 
+          uploadState.currentStep > 1 ? styles.completed : styles.inactive
         }`}>
-          1
+          {uploadState.currentStep > 1 ? '✓' : '1'}
         </div>
         <span>Select Files</span>
       </div>
       
-      <div className={`wizard-step-connector ${
-        uploadState.currentStep > 1 ? 'completed' : ''
+      <div className={`${styles.wizardStepConnector} ${
+        uploadState.currentStep > 1 ? styles.completed : ''
       }`} />
       
-      <div className="wizard-step">
-        <div className={`wizard-step-circle ${
-          uploadState.currentStep === 2 ? 'active' : 
-          uploadState.currentStep > 2 ? 'completed' : 'inactive'
+      <div className={styles.wizardStep}>
+        <div className={`${styles.wizardStepCircle} ${
+          uploadState.currentStep === 2 ? styles.active : 
+          uploadState.currentStep > 2 ? styles.completed : styles.inactive
         }`}>
-          2
+          {uploadState.currentStep > 2 ? '✓' : '2'}
         </div>
         <span>Add Details</span>
       </div>
       
-      <div className={`wizard-step-connector ${
-        uploadState.currentStep > 2 ? 'completed' : ''
+      <div className={`${styles.wizardStepConnector} ${
+        uploadState.currentStep > 2 ? styles.completed : ''
       }`} />
       
-      <div className="wizard-step">
-        <div className={`wizard-step-circle ${
-          uploadState.currentStep === 3 ? 'active' : 'inactive'
+      <div className={styles.wizardStep}>
+        <div className={`${styles.wizardStepCircle} ${
+          uploadState.currentStep === 3 ? styles.active : 
+          uploadState.uploadCompleted ? styles.completed : styles.inactive
         }`}>
-          3
+          {uploadState.uploadCompleted ? '✓' : '3'}
         </div>
         <span>Upload</span>
       </div>
@@ -131,7 +154,6 @@ export default function Upload() {
           <FileSelectionStep
             selectedFiles={uploadState.selectedFiles}
             onFilesChange={updateFiles}
-            onNext={nextStep}
           />
         );
       case 2:
@@ -140,17 +162,17 @@ export default function Upload() {
             selectedFiles={uploadState.selectedFiles}
             fileMetadata={uploadState.fileMetadata}
             onMetadataChange={updateMetadata}
-            onNext={nextStep}
-            onPrev={prevStep}
           />
         );
       case 3:
         return (
           <UploadProgressStep
+            ref={uploadProgressRef}
             selectedFiles={uploadState.selectedFiles}
             fileMetadata={uploadState.fileMetadata}
+            onUploadStart={handleUploadStart}
+            onUploadComplete={handleUploadComplete}
             onComplete={resetUpload}
-            onPrev={prevStep}
           />
         );
       default:
@@ -158,18 +180,107 @@ export default function Upload() {
     }
   };
 
-  return (
-    <div className="wizard-container">
-      <div className="wizard-header">
-        <h1 className="heading-primary">Upload Images</h1>
+  const getStepTitle = () => {
+    switch (uploadState.currentStep) {
+      case 1:
+        return "Select Files";
+      case 2:
+        return `Add Details (${uploadState.selectedFiles.length} image${uploadState.selectedFiles.length !== 1 ? 's' : ''})`;
+      case 3:
+        return "Upload Progress";
+      default:
+        return "Upload Images";
+    }
+  };
+
+  const getStepSubtitle = () => {
+    switch (uploadState.currentStep) {
+      case 1:
+        return "Step 1 of 3: Choose images to upload";
+      case 2:
+        return "Step 2 of 3: Add details for each image (optional)";
+      case 3:
+        return "Step 3 of 3: Uploading your images";
+      default:
+        return "";
+    }
+  };
+
+  const renderNavigation = () => {
+    const canProceedStep1 = uploadState.selectedFiles.length > 0;
+    
+    return (
+      <div className={styles.navigation}>
+        <div className={styles.leftNav}>
+          {uploadState.currentStep === 2 && (
+            <button onClick={prevStep} className={styles.prevButton}>
+              ← Back to File Selection
+            </button>
+          )}
+          {uploadState.currentStep === 3 && !uploadState.uploadCompleted && (
+            <button 
+              onClick={prevStep} 
+              disabled={uploadState.isUploading}
+              className={styles.prevButton}
+            >
+              ← Back to Metadata
+            </button>
+          )}
+          {uploadState.currentStep === 3 && uploadState.uploadCompleted && (
+            <button onClick={resetUpload} className={styles.prevButton}>
+              ← Upload More Files
+            </button>
+          )}
+        </div>
+        
+        <div className={styles.rightNav}>
+          {uploadState.currentStep === 1 && (
+            <button
+              onClick={nextStep}
+              disabled={!canProceedStep1}
+              className={styles.nextButton}
+            >
+              Next: Add Details →
+            </button>
+          )}
+          {uploadState.currentStep === 2 && (
+            <button onClick={nextStep} className={styles.nextButton}>
+              Next: Upload Images →
+            </button>
+          )}
+          {uploadState.currentStep === 3 && !uploadState.isUploading && !uploadState.uploadCompleted && (
+            <button onClick={startUpload} className={styles.nextButton}>
+              Start Upload
+            </button>
+          )}
+          {uploadState.currentStep === 3 && uploadState.uploadCompleted && (
+            <button onClick={resetUpload} className={styles.nextButton}>
+              Complete & View Gallery
+            </button>
+          )}
+        </div>
       </div>
-      
-      <div className="wizard-content">
+    );
+  };
+
+  return (
+    <div className={styles.pageContainer}>
+      <div className={styles.contentContainer}>
         {renderStepIndicator()}
         
-        <div className="min-h-96">
+        <div className={styles.header}>
+          <h1 className={styles.title}>{getStepTitle()}</h1>
+          <p className={styles.subtitle}>{getStepSubtitle()}</p>
+        </div>
+        
+        <div className={styles.divider}></div>
+        
+        <div className={styles.stepContent}>
           {renderCurrentStep()}
         </div>
+        
+        <div className={styles.divider}></div>
+        {renderNavigation()}
       </div>
     </div>
   );

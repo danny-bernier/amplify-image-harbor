@@ -19,10 +19,9 @@ import styles from './FileSelectionStep.module.css';
 interface FileSelectionStepProps {
   selectedFiles: SelectedFile[];
   onFilesChange: (files: SelectedFile[]) => void;
-  onNext: () => void;
 }
 
-export function FileSelectionStep({ selectedFiles, onFilesChange, onNext }: FileSelectionStepProps) {
+export function FileSelectionStep({ selectedFiles, onFilesChange }: FileSelectionStepProps) {
   const [dragActive, setDragActive] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
@@ -77,8 +76,6 @@ export function FileSelectionStep({ selectedFiles, onFilesChange, onNext }: File
   const cancelClearAll = () => {
     setShowClearConfirm(false);
   };
-
-  const canProceed = selectedFiles.length > 0;
 
   return (
     <div className={styles.container}>
@@ -178,25 +175,6 @@ export function FileSelectionStep({ selectedFiles, onFilesChange, onNext }: File
             <p className={styles.dropZoneSubtext}>Supports JPEG, PNG, TIFF, and RAW formats (CR2, NEF, ARW, DNG, etc.)</p>
           </div>
         )}
-      </div>
-
-      {/* Navigation */}
-      <div className={styles.navigation}>
-        <div>
-          <p className={styles.subtitle}>
-            Step 1 of 3: Select the images you want to upload
-          </p>
-        </div>
-        
-        <div className={styles.navigationGroup}>
-          <button
-            onClick={onNext}
-            disabled={!canProceed}
-            className={styles.nextButton}
-          >
-            Next: Add Details
-          </button>
-        </div>
       </div>
 
       {/* Confirmation Modal */}

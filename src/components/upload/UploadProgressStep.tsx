@@ -9,8 +9,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { SelectedFile, FileMetadata } from './UploadWizard';
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { SelectedFile, FileMetadata } from './Upload';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import { logger } from '@/utils/logger';
 import { uploadService } from '@/services/uploadService';
@@ -24,8 +24,13 @@ const log = logger.forComponent('UploadProgressStep');
 interface UploadProgressStepProps {
   selectedFiles: SelectedFile[];
   fileMetadata: Record<string, FileMetadata>;
+  onUploadStart: () => void;
+  onUploadComplete: () => void;
   onComplete: () => void;
-  onPrev: () => void;
+}
+
+export interface UploadProgressStepRef {
+  startUpload: () => void;
 }
 
 interface UploadStatus {
@@ -35,15 +40,15 @@ interface UploadStatus {
   error?: string;
 }
 
-export function UploadProgressStep({
-  selectedFiles,
-  fileMetadata,
-  onComplete,
-  onPrev
-}: UploadProgressStepProps) {
+export const UploadProgressStep = forwardRef<UploadProgressStepRef, UploadProgressStepProps>(
+  ({ selectedFiles, fileMetadata, onUploadStart, onUploadComplete, onComplete }, ref) => {
   const [uploadStatuses, setUploadStatuses] = useState<Record<string, UploadStatus>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [overallProgress, setOverallProgress] = useState(0);
+
+  useImperativeHandle(ref, () => ({
+    startUpload
+  }));
 
   // Initialize upload statuses
   useEffect(() => {
@@ -116,6 +121,7 @@ export function UploadProgressStep({
 
   const startUpload = async () => {
     setIsUploading(true);
+    onUploadStart();
 
     try {
       // Upload files sequentially to avoid overwhelming the server
@@ -130,13 +136,13 @@ export function UploadProgressStep({
       }
 
       // All uploads completed successfully
-      setTimeout(() => {
-        onComplete();
-      }, 1000); // Small delay to show completion state
+      setIsUploading(false);
+      onUploadComplete();
 
     } catch (error) {
       log.error('Upload process failed:', error);
       setIsUploading(false);
+      onUploadComplete();
     }
   };
 
@@ -230,36 +236,6 @@ export function UploadProgressStep({
 
   return (
     <div className={styles.container}>
-      {/* Header */}
-      <div className={styles.header}>
-        <h3 className={styles.title}>Upload Progress</h3>
-        <p className={styles.subtitle}>
-          {allCompleted
-            ? `Upload completed: ${successCount} successful, ${errorCount} failed`
-            : `Uploading ${selectedFiles.length} images to your gallery...`
-          }
-        </p>
-      </div>
-
-      {/* Overall Progress */}
-      <div className={styles.overallProgress}>
-        <div className={styles.progressHeader}>
-          <span className={styles.progressLabel}>Overall Progress</span>
-          <span className={styles.progressPercentage}>{overallProgress}%</span>
-        </div>
-        <div className={styles.progressBar}>
-          <div
-            className={allCompleted
-                ? errorCount > 0
-                  ? styles.progressFillWarning
-                  : styles.progressFillSuccess
-                : styles.progressFillPrimary
-              }
-            style={{ width: `${overallProgress}%` }}
-          />
-        </div>
-      </div>
-
       {/* Individual File Progress */}
       <div className={styles.fileList}>
         {selectedFiles.map((file) => {
@@ -284,30 +260,23 @@ export function UploadProgressStep({
         })}
       </div>
 
-      {/* Action Buttons */}
-      <div className={styles.navigation}>
-        <button
-          onClick={onPrev}
-          disabled={isUploading}
-          className={styles.prevButton}
-        >
-          ← Back to Metadata
-        </button>
-
-        <div className={styles.navigationGroup}>
-          {!isUploading && !allCompleted && (
-            <button onClick={startUpload} className={styles.startButton}>
-              Start Upload
-            </button>
-          )}
-
-          {allCompleted && (
-            <button onClick={onComplete} className={styles.completeButton}>
-              {errorCount > 0 ? 'Continue with Successful Uploads' : 'Complete & View Gallery'}
-            </button>
-          )}
+      {/* Overall Progress */}
+      <div className={styles.overallProgress}>
+        <div className={styles.progressHeader}>
+          <span className={styles.progressLabel}>Overall Progress</span>
+          <span className={styles.progressPercentage}>{overallProgress}%</span>
+        </div>
+        <div className={styles.progressBar}>
+          <div
+            className={errorCount > 0
+                ? styles.progressFillWarning
+                : styles.progressFillSuccess
+              }
+            style={{ width: `${overallProgress}%` }}
+          />
         </div>
       </div>
+
     </div>
   );
-}
+});

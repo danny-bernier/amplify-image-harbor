@@ -8,7 +8,7 @@
 
 // Main upload components
 export { default as Upload } from './Upload';
-export { UploadWizard } from './UploadWizard';
+export { default as UploadWizard } from './UploadWizard';
 
 // Upload wizard steps
 export { FileSelectionStep } from './FileSelectionStep';

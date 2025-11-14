@@ -18,16 +18,12 @@ interface MetadataStepProps {
   selectedFiles: SelectedFile[];
   fileMetadata: Record<string, FileMetadata>;
   onMetadataChange: (fileId: string, metadata: FileMetadata) => void;
-  onNext: () => void;
-  onPrev: () => void;
 }
 
 export function MetadataStep({ 
   selectedFiles, 
   fileMetadata, 
-  onMetadataChange, 
-  onNext, 
-  onPrev 
+  onMetadataChange 
 }: MetadataStepProps) {
   const [tagInputs, setTagInputs] = useState<Record<string, string>>({});
 
@@ -127,27 +123,15 @@ export function MetadataStep({
 
   if (selectedFiles.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-caption">No files selected</p>
-        <button onClick={onPrev} className="btn btn-secondary mt-4">
-          Go Back
-        </button>
+      <div className={styles.emptyState}>
+        <p className={styles.emptyStateText}>No files selected</p>
+        <p className={styles.emptyStateText}>Please go back and select files to upload.</p>
       </div>
     );
   }
 
   return (
     <div className={styles.container}>
-      {/* Header */}
-      <div className={styles.header}>
-        <h3 className={styles.title}>
-          Add Details ({selectedFiles.length} images)
-        </h3>
-        <div className={styles.subtitle}>
-          Step 2 of 3: Add details for each image (optional)
-        </div>
-      </div>
-
       {/* Images Grid */}
       <div className={styles.metadataGrid}>
         {selectedFiles.map((file, index) => {
@@ -158,31 +142,31 @@ export function MetadataStep({
             <div key={file.id} className={styles.metadataItem}>
               {/* Image Preview */}
               <div className={styles.imageContainer}>
-                <div className="aspect-square rounded-lg overflow-hidden bg-surface border border-border">
+                <div className={styles.imageWrapper}>
                   <Image
                     src={file.preview}
                     alt={file.file.name}
                     width={120}
                     height={120}
-                    className="w-full h-full object-cover"
+                    className={styles.imagePreview}
                     unoptimized
                   />
                 </div>
-                <div className="mt-2 text-center">
-                  <p className="text-xs font-medium truncate" title={file.file.name}>
+                <div className={styles.fileInfo}>
+                  <p className={styles.fileName} title={file.file.name}>
                     {file.file.name}
                   </p>
-                  <p className="text-xs text-muted">
+                  <p className={styles.fileSize}>
                     {(file.file.size / 1024 / 1024).toFixed(1)} MB
                   </p>
                 </div>
               </div>
 
               {/* Form Fields */}
-              <div className="metadata-form">
+              <div className={styles.formSection}>
                 {/* Title */}
-                <div className="metadata-field">
-                  <label className="metadata-label">
+                <div className={styles.formField}>
+                  <label className={styles.fieldLabel}>
                     Title
                   </label>
                   <input
@@ -190,13 +174,13 @@ export function MetadataStep({
                     value={metadata.title || ''}
                     onChange={(e) => updateMetadata(file.id, 'title', e.target.value)}
                     placeholder="Enter a title for this image"
-                    className="form-input text-sm"
+                    className={styles.fieldInput}
                   />
                 </div>
 
                 {/* Description */}
-                <div className="metadata-field">
-                  <label className="metadata-label">
+                <div className={styles.formField}>
+                  <label className={styles.fieldLabel}>
                     Description
                   </label>
                   <textarea
@@ -204,51 +188,51 @@ export function MetadataStep({
                     onChange={(e) => updateMetadata(file.id, 'description', e.target.value)}
                     placeholder="Describe this image..."
                     rows={2}
-                    className="form-input resize-none text-sm"
+                    className={styles.fieldTextarea}
                   />
                 </div>
 
                 {/* Tags */}
-                <div className="metadata-field">
-                  <label className="metadata-label">
+                <div className={styles.formField}>
+                  <label className={styles.fieldLabel}>
                     Tags
                   </label>
-                  <div className="space-y-2">
+                  <div className={styles.tagSection}>
                     {/* Tag Input */}
-                    <div className="flex space-x-2">
+                    <div className={styles.tagInputContainer}>
                       <input
                         type="text"
                         value={tagInput}
                         onChange={(e) => handleTagInputChange(file.id, e.target.value)}
                         onKeyPress={(e) => handleTagInputKeyPress(e, file.id)}
                         placeholder="Add a tag (e.g., 'nature' or 'location=Paris')"
-                        className="form-input flex-1 text-sm"
+                        className={styles.tagInput}
                       />
                       <button
                         onClick={() => addTag(file.id)}
                         disabled={!tagInput.trim()}
-                        className="btn btn-secondary text-sm px-3"
+                        className={styles.tagAddButton}
                       >
                         Add
                       </button>
                     </div>
 
                     {/* Helper Text */}
-                    <div className="text-xs text-muted">
+                    <div className={styles.tagHelp}>
                       Enter keywords associated with this image. Use "key=value" or "key:value" to add structured metadata.
                     </div>
 
                     {/* Current Simple Tags */}
                     {metadata.tags && metadata.tags.length > 0 && (
                       <div>
-                        <div className="text-xs font-medium text-muted mb-1">General Tags:</div>
-                        <div className="flex flex-wrap gap-1">
+                        <div className={styles.tagSectionTitle}>General Tags:</div>
+                        <div className={styles.tagList}>
                           {metadata.tags.map((tag, tagIndex) => (
-                            <span key={tagIndex} className="tag text-xs bg-blue-100 text-blue-800 border-blue-200">
+                            <span key={tagIndex} className={`${styles.tag} ${styles.tagGeneral}`}>
                               {tag}
                               <button
                                 onClick={() => removeTag(file.id, tag)}
-                                className="tag-remove"
+                                className={styles.tagRemoveButton}
                               >
                                 ×
                               </button>
@@ -261,14 +245,14 @@ export function MetadataStep({
                     {/* Current JSON Tags (Key-Value Pairs) */}
                     {metadata.jsonTags && Object.keys(metadata.jsonTags).length > 0 && (
                       <div>
-                        <div className="text-xs font-medium text-muted mb-1">Structured Tags:</div>
-                        <div className="flex flex-wrap gap-1">
+                        <div className={styles.tagSectionTitle}>Structured Tags:</div>
+                        <div className={styles.tagList}>
                           {Object.entries(metadata.jsonTags).map(([key, value]) => (
-                            <span key={key} className="tag text-xs bg-green-100 text-green-800 border-green-200">
+                            <span key={key} className={`${styles.tag} ${styles.tagStructured}`}>
                               <strong>{key}:</strong> {String(value)}
                               <button
                                 onClick={() => removeJsonTag(file.id, key)}
-                                className="tag-remove"
+                                className={styles.tagRemoveButton}
                               >
                                 ×
                               </button>
@@ -286,10 +270,10 @@ export function MetadataStep({
       </div>
 
       {/* Progress Indicator */}
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-caption">Metadata Progress</span>
-          <span className="text-caption">
+      <div className={styles.progressSection}>
+        <div className={styles.progressHeader}>
+          <span className={styles.progressLabel}>Metadata Progress</span>
+          <span className={styles.progressText}>
             {(() => {
               const imagesWithMetadata = selectedFiles.filter(file => {
                 const metadata = fileMetadata[file.id];
@@ -299,9 +283,9 @@ export function MetadataStep({
             })()}
           </span>
         </div>
-        <div className="w-full bg-surface rounded-full h-2 border border-border">
+        <div className={styles.progressBar}>
           <div 
-            className="bg-green-500 h-full rounded-full transition-all duration-300"
+            className={styles.progressFill}
             style={{ 
               width: `${selectedFiles.length > 0 ? (() => {
                 const imagesWithMetadata = selectedFiles.filter(file => {
@@ -313,17 +297,6 @@ export function MetadataStep({
             }}
           />
         </div>
-      </div>
-
-      {/* Navigation */}
-      <div className="flex justify-between items-center pt-6 border-t border-border">
-        <button onClick={onPrev} className="btn btn-secondary">
-          ← Back to File Selection
-        </button>
-        
-        <button onClick={onNext} className="btn btn-primary">
-          Next: Upload Images →
-        </button>
       </div>
     </div>
   );

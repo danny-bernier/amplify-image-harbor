@@ -203,6 +203,11 @@
   gap: 1rem;
 }
 
+.baseNavigationSingle {
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* Base Text Classes */
 .baseTitle {
   font-size: 1.25rem;

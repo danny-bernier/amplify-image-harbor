@@ -19,7 +19,7 @@ import { GalleryImage } from '@/types/gallery';
 import styles from './Gallery.module.css';
 import ImageGrid from './ImageGrid';
 import { ImageInspector } from './image-inspector';
-import FullscreenPreview from './FullscreenPreview';
+import FullscreenPreview from '../common/FullscreenPreview';
 
 // Create component-specific logger
 const log = logger.forComponent('Gallery');

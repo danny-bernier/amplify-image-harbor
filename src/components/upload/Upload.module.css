@@ -1,31 +1,239 @@
 /**
  * @fileoverview Upload component styles
- * Composes base styles from Common.module.css for upload page layout.
+ * Provides consistent layout with centered container, proper spacing, and responsive design.
  */
 
-.container {
-  composes: baseContainer from './Common.module.css';
-  max-width: 1200px;
-  margin: 0 auto;
+/* Main page container with consistent spacing from navbar */
+.pageContainer {
   padding: 2rem;
-  min-height: calc(100vh - 4rem);
+  background: var(--background);
 }
 
-.content {
-  composes: baseContent from './Common.module.css';
+/* Centered content container with consistent styling */
+.contentContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 7rem);
+}
+
+/* Header section with title - now below step indicator */
+.header {
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: var(--muted-foreground);
+  margin-top: 0.5rem;
+}
+
+/* Step indicator */
+.wizardSteps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.wizardStep {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.wizardStepCircle {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border: 2px solid var(--border);
+  background: var(--background);
+  color: var(--muted);
+}
+
+.wizardStepCircle.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.wizardStepCircle.completed {
+  background: var(--success);
+  border-color: var(--success);
+  color: white;
+}
+
+.wizardStepCircle.inactive {
+  background: var(--background);
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+.wizardStepConnector {
+  height: 1px;
+  flex: 1;
+  background: var(--border);
+}
+
+.wizardStepConnector.completed {
+  background: var(--success);
+}
+
+.stepContent {
+  flex: 1;
+  padding: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 16rem;
+}
+
+/* Horizontal divider lines */
+.divider {
+  height: 1px;
+  background: var(--border);
+  width: 100%;
+}
+
+/* Navigation layout */
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0 0 0;
+  margin-bottom: 0;
+}
+
+.leftNav {
+  display: flex;
+}
+
+.rightNav {
+  display: flex;
+}
+
+.prevButton {
+  background: var(--background);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.prevButton:hover {
+  background: var(--muted);
+}
+
+.prevButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nextButton {
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nextButton:hover {
+  background: var(--primary)/90;
+}
+
+.nextButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Responsive adjustments */
+@media (max-width: 1024px) {
+  .pageContainer {
+    padding: 1.5rem;
+  }
+  
+  .contentContainer {
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
-  .container {
+  .pageContainer {
     padding: 1rem;
-    min-height: calc(100vh - 2rem);
+  }
+  
+  .contentContainer {
+    padding: 1.5rem 1.5rem 1.5rem 1.5rem;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .wizardSteps {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .wizardStepConnector {
+    width: 1px;
+    height: 1rem;
+  }
+  
+  .navigation {
+    padding: 0.75rem 0 0 0;
   }
 }
 
 @media (max-width: 480px) {
-  .container {
+  .pageContainer {
     padding: 0.5rem;
-    min-height: calc(100vh - 1rem);
+  }
+  
+  .contentContainer {
+    padding: 1rem 1rem 1rem 1rem;
+  }
+  
+  .title {
+    font-size: 1.25rem;
+  }
+  
+  .subtitle {
+    font-size: 0.875rem;
+  }
+  
+  .stepContent {
+    min-height: 20rem;
+  }
+  
+  .navigation {
+    padding: 0.5rem 0 0 0;
   }
 }

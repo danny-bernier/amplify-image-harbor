@@ -156,6 +156,10 @@
   composes: baseNavigationGroup from './Common.module.css';
 }
 
+.navigationSingle {
+  composes: baseNavigationSingle from './Common.module.css';
+}
+
 .nextButton {
   composes: basePrimaryButton from './Common.module.css';
 }

@@ -144,76 +144,7 @@ body {
     @apply ml-1.5 hover:opacity-75 cursor-pointer;
   }
   
-  /* Wizard Components */
-  .wizard-container {
-    @apply mx-auto px-6;
-    max-width: calc(100vw - 3rem); /* Full width minus padding */
-    background: var(--background);
-    border: 1px solid var(--border);
-    border-radius: 0.75rem;
-    overflow: hidden;
-  }
-  
-  /* Remove wizard padding on narrow screens */
-  @media (max-width: 480px) {
-    .wizard-container {
-      @apply px-2; /* Minimal padding */
-      max-width: calc(100vw - 1rem);
-    }
-  }
-  
-  @media (max-width: 360px) {
-    .wizard-container {
-      @apply px-1; /* Even less padding */
-      max-width: calc(100vw - 0.5rem);
-    }
-  }
-  
-  .wizard-header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 2rem;
-    text-align: center;
-  }
-  
-  .wizard-content {
-    padding: 2rem;
-  }
-  
-  .wizard-steps {
-    @apply flex items-center justify-center mb-8 space-x-4;
-  }
-  
-  .wizard-step {
-    @apply flex items-center space-x-2 text-sm;
-  }
-  
-  .wizard-step-circle {
-    @apply w-8 h-8 rounded-full flex items-center justify-center font-semibold transition-all;
-    border: 2px solid var(--border);
-    background: var(--background);
-    color: var(--muted);
-  }
-  
-  .wizard-step-circle.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: var(--primary-foreground);
-  }
-  
-  .wizard-step-circle.completed {
-    background: var(--success);
-    border-color: var(--success);
-    color: white;
-  }
-  
-  .wizard-step-connector {
-    @apply h-px flex-1;
-    background: var(--border);
-  }
-  .wizard-step-connector.completed {
-    background: var(--success);
-  }
+
   
   /* Dropzone */
   .dropzone {
