@@ -8,12 +8,12 @@
 
 // Main upload components
 export { default as Upload } from './Upload';
-export { default as UploadWizard } from './UploadWizard';
+// UploadWizard functionality consolidated into Upload component
 
 // Upload wizard steps
 export { FileSelectionStep } from './FileSelectionStep';
 export { MetadataStep } from './MetadataStep';
 export { UploadProgressStep } from './UploadProgressStep';
 
-// Types (re-export from UploadWizard)
-export type { SelectedFile, FileMetadata } from './UploadWizard';
+// Types (re-export from Upload)
+export type { SelectedFile, FileMetadata } from './Upload';

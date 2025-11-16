@@ -12,6 +12,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { GalleryImage } from '@/types/gallery';
+import {THUMBNAIL_SIZES} from '@/types/images';
 import ImageInspectorControlBar from './ImageInspectorControlBar';
 import FullscreenPreview from '@/components/common/FullscreenPreview';
 import styles from './SingleImageInspector.module.css';
@@ -68,7 +69,7 @@ export default function SingleImageInspector({
             <div className={styles.imageContainer}>
               <div className={styles.imageWrapper} onClick={() => setIsFullscreenOpen(true)} style={{ cursor: 'pointer' }}>
                 <Image
-                  src={image.largeThumbnail?.url || image.mediumThumbnail?.url || image.url}
+                  src={image.thumbnails.LARGE?.url || image.thumbnails.MEDIUM?.url || image.url}
                   alt={image.description || image.title || 'Image preview'}
                   fill
                   className={styles.image}

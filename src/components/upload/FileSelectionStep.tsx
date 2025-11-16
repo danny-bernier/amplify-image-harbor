@@ -12,7 +12,7 @@
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Image from 'next/image';
-import { SelectedFile } from './UploadWizard';
+import { SelectedFile } from './Upload';
 import { ConfirmationModal } from '@/components/common/ConfirmationModal';
 import { ACCEPTED_IMAGE_TYPES } from '@/utils/imageUtils';
 import styles from './FileSelectionStep.module.css';

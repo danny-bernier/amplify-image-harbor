@@ -9,8 +9,8 @@
 
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../amplify/data/resource';
-import type { ThumbnailSize, ThumbnailSizeName } from '@/types/thumbnail';
-import { THUMBNAIL_SIZES } from '@/types/thumbnail';
+import type { ThumbnailSizeName } from '@/types/images';
+import { THUMBNAIL_SIZES } from '@/types/images';
 import { logger } from '@/utils/logger';
 
 // Create component-specific logger
@@ -40,7 +40,7 @@ export interface CreateImageInput {
  * @returns Promise resolving to the created image record
  * @throws Error if creation fails
  */
-export const createImage = async (input: CreateImageInput) => {
+export const createImage = async (input: CreateImageInput): Promise<Schema['Image']['type']> => {
   try {
     log.devDebug('Input received for createImage', { 
       title: input.title, 
@@ -136,6 +136,9 @@ export const createImage = async (input: CreateImageInput) => {
     
     log.info('Image created successfully');
     
+    if (!result.data) {
+      throw new Error('Failed to create image: No data returned');
+    }
     return result.data;
   } catch (error) {
     log.error('Exception in createImage', { 
@@ -154,7 +157,7 @@ export const createImage = async (input: CreateImageInput) => {
  * @returns Promise resolving to the image record or null if not found
  * @throws Error if retrieval fails
  */
-export const getImage = async (id: string) => {
+export const getImage = async (id: string): Promise<Schema['Image']['type'] | null> => {
   try {
     const result = await client.models.Image.get({ id });
     
@@ -162,7 +165,7 @@ export const getImage = async (id: string) => {
       throw new Error(`Failed to get image: ${result.errors.map(e => e.message).join(', ')}`);
     }
     
-    return result.data;
+    return result.data ?? null;
   } catch (error) {
     log.error('Error getting image:', error);
     throw error;
@@ -175,7 +178,7 @@ export const getImage = async (id: string) => {
  * @returns Promise resolving to an array of image records
  * @throws Error if retrieval fails
  */
-export const listImages = async (limit?: number) => {
+export const listImages = async (limit?: number): Promise<Schema['Image']['type'][]> => {
   try {
     const result = await client.models.Image.list({
       limit: limit || 100,
@@ -185,7 +188,7 @@ export const listImages = async (limit?: number) => {
       throw new Error(`Failed to list images: ${result.errors.map(e => e.message).join(', ')}`);
     }
     
-    return result.data;
+    return result.data ?? [];
   } catch (error) {
     log.error('Error listing images:', error);
     throw error;
@@ -199,7 +202,7 @@ export const listImages = async (limit?: number) => {
  * @returns Promise resolving to the updated image record
  * @throws Error if update fails
  */
-export const updateImage = async (id: string, updates: Partial<CreateImageInput>) => {
+export const updateImage = async (id: string, updates: Partial<CreateImageInput>): Promise<Schema['Image']['type']> => {
   try {
     const result = await client.models.Image.update({
       id,
@@ -211,6 +214,9 @@ export const updateImage = async (id: string, updates: Partial<CreateImageInput>
       throw new Error(`Failed to update image: ${result.errors.map(e => e.message).join(', ')}`);
     }
     
+    if (!result.data) {
+      throw new Error('Failed to update image: No data returned');
+    }
     return result.data;
   } catch (error) {
     log.error('Error updating image:', error);
@@ -224,7 +230,7 @@ export const updateImage = async (id: string, updates: Partial<CreateImageInput>
  * @returns Promise resolving to the deleted image record
  * @throws Error if deletion fails
  */
-export const deleteImage = async (id: string) => {
+export const deleteImage = async (id: string): Promise<Schema['Image']['type']> => {
   try {
     log.devDebug('Deleting image record', { imageId: id });
 
@@ -234,6 +240,9 @@ export const deleteImage = async (id: string) => {
       throw new Error(`Failed to delete image: ${result.errors.map(e => e.message).join(', ')}`);
     }
     
+    if (!result.data) {
+      throw new Error('Failed to delete image: No data returned');
+    }
     return result.data;
   } catch (error) {
     log.error('Error deleting image:', error);
@@ -259,7 +268,7 @@ export interface CreateEditedInput {
  * @returns Promise resolving to the created edited image record
  * @throws Error if creation fails
  */
-export const createEdited = async (input: CreateEditedInput) => {
+export const createEdited = async (input: CreateEditedInput): Promise<Schema['Edited']['type']> => {
   try {
     const now = new Date().toISOString();
     const result = await client.models.Edited.create({
@@ -272,6 +281,9 @@ export const createEdited = async (input: CreateEditedInput) => {
       throw new Error(`Failed to create edited: ${result.errors.map(e => e.message).join(', ')}`);
     }
     
+    if (!result.data) {
+      throw new Error('Failed to create edited: No data returned');
+    }
     return result.data;
   } catch (error) {
     log.error('Error creating edited:', error);
@@ -285,7 +297,7 @@ export const createEdited = async (input: CreateEditedInput) => {
  * @returns Promise resolving to the edited image record or null if not found
  * @throws Error if retrieval fails
  */
-export const getEdited = async (id: string) => {
+export const getEdited = async (id: string): Promise<Schema['Edited']['type'] | null> => {
   try {
     const result = await client.models.Edited.get({ id });
     
@@ -293,7 +305,7 @@ export const getEdited = async (id: string) => {
       throw new Error(`Failed to get edited: ${result.errors.map(e => e.message).join(', ')}`);
     }
     
-    return result.data;
+    return result.data ?? null;
   } catch (error) {
     log.error('Error getting edited:', error);
     throw error;
@@ -306,7 +318,7 @@ export const getEdited = async (id: string) => {
  * @returns Promise resolving to an array of edited image records
  * @throws Error if retrieval fails
  */
-export const listEditedByOriginal = async (imageId: string) => {
+export const listEditedByOriginal = async (imageId: string): Promise<Schema['Edited']['type'][]> => {
   try {
     const result = await client.models.Edited.list({
       filter: {
@@ -320,7 +332,7 @@ export const listEditedByOriginal = async (imageId: string) => {
       throw new Error(`Failed to list edited: ${result.errors.map(e => e.message).join(', ')}`);
     }
     
-    return result.data;
+    return result.data ?? [];
   } catch (error) {
     log.error('Error listing edited:', error);
     throw error;
@@ -334,7 +346,7 @@ export const listEditedByOriginal = async (imageId: string) => {
  * @returns Promise resolving to the updated edited image record
  * @throws Error if update fails
  */
-export const updateEdited = async (id: string, updates: Partial<CreateEditedInput>) => {
+export const updateEdited = async (id: string, updates: Partial<CreateEditedInput>): Promise<Schema['Edited']['type']> => {
   try {
     const result = await client.models.Edited.update({
       id,
@@ -346,6 +358,9 @@ export const updateEdited = async (id: string, updates: Partial<CreateEditedInpu
       throw new Error(`Failed to update edited: ${result.errors.map(e => e.message).join(', ')}`);
     }
     
+    if (!result.data) {
+      throw new Error('Failed to update edited: No data returned');
+    }
     return result.data;
   } catch (error) {
     log.error('Error updating edited:', error);
@@ -359,7 +374,7 @@ export const updateEdited = async (id: string, updates: Partial<CreateEditedInpu
  * @returns Promise resolving to the deleted edited image record
  * @throws Error if deletion fails
  */
-export const deleteEdited = async (id: string) => {
+export const deleteEdited = async (id: string): Promise<Schema['Edited']['type']> => {
   try {
     const result = await client.models.Edited.delete({ id });
     
@@ -367,6 +382,9 @@ export const deleteEdited = async (id: string) => {
       throw new Error(`Failed to delete edited: ${result.errors.map(e => e.message).join(', ')}`);
     }
     
+    if (!result.data) {
+      throw new Error('Failed to delete edited: No data returned');
+    }
     return result.data;
   } catch (error) {
     log.error('Error deleting edited:', error);
@@ -391,7 +409,7 @@ export interface CreateThumbnailInput {
  * @returns Promise resolving to the created thumbnail record
  * @throws Error if creation fails
  */
-export const createThumbnail = async (input: CreateThumbnailInput) => {
+export const createThumbnail = async (input: CreateThumbnailInput): Promise<Schema['Thumbnail']['type']> => {
   try {
     log.devDebug('Thumbnail input received', { 
       imageId: input.imageId, 
@@ -437,6 +455,9 @@ export const createThumbnail = async (input: CreateThumbnailInput) => {
     
     log.info('Thumbnail created successfully');
     
+    if (!result.data) {
+      throw new Error('Failed to create thumbnail: No data returned');
+    }
     return result.data;
   } catch (error) {
     log.error('Exception in createThumbnail', { 
@@ -454,7 +475,7 @@ export const createThumbnail = async (input: CreateThumbnailInput) => {
  * @returns Promise resolving to the thumbnail record or null if not found
  * @throws Error if retrieval fails
  */
-export const getThumbnail = async (id: string) => {
+export const getThumbnail = async (id: string): Promise<Schema['Thumbnail']['type'] | null> => {
   try {
     const result = await client.models.Thumbnail.get({ id });
     
@@ -462,7 +483,7 @@ export const getThumbnail = async (id: string) => {
       throw new Error(`Failed to get thumbnail: ${result.errors.map(e => e.message).join(', ')}`);
     }
     
-    return result.data;
+    return result.data ?? null;
   } catch (error) {
     log.error('Error getting thumbnail:', error);
     throw error;
@@ -476,7 +497,7 @@ export const getThumbnail = async (id: string) => {
  * @returns Promise resolving to the thumbnail record or null if not found
  * @throws Error if retrieval fails
  */
-export const getThumbnailBySize = async (imageId: string, size: ThumbnailSizeName) => {
+export const getThumbnailBySize = async (imageId: string, size: ThumbnailSizeName): Promise<Schema['Thumbnail']['type'] | null> => {
   try {
     const result = await client.models.Thumbnail.list({
       filter: {
@@ -493,7 +514,7 @@ export const getThumbnailBySize = async (imageId: string, size: ThumbnailSizeNam
       throw new Error(`Failed to get thumbnail by size: ${result.errors.map(e => e.message).join(', ')}`);
     }
     
-    return result.data[0] || null; // Return first match or null
+    return (result.data && result.data[0]) ? result.data[0] : null; // Return first match or null
   } catch (error) {
     log.error('Error getting thumbnail by size:', error);
     throw error;
@@ -507,7 +528,7 @@ export const getThumbnailBySize = async (imageId: string, size: ThumbnailSizeNam
  * @returns Promise resolving to the updated thumbnail record
  * @throws Error if update fails
  */
-export const updateThumbnail = async (id: string, updates: Partial<CreateThumbnailInput>) => {
+export const updateThumbnail = async (id: string, updates: Partial<CreateThumbnailInput>): Promise<Schema['Thumbnail']['type']> => {
   try {
     const result = await client.models.Thumbnail.update({
       id,
@@ -519,6 +540,9 @@ export const updateThumbnail = async (id: string, updates: Partial<CreateThumbna
       throw new Error(`Failed to update thumbnail: ${result.errors.map(e => e.message).join(', ')}`);
     }
     
+    if (!result.data) {
+      throw new Error('Failed to update thumbnail: No data returned');
+    }
     return result.data;
   } catch (error) {
     log.error('Error updating thumbnail:', error);
@@ -527,37 +551,31 @@ export const updateThumbnail = async (id: string, updates: Partial<CreateThumbna
 };
 
 /**
- * Get small thumbnails for multiple images at once (optimized for gallery grid loading)
- * @param imageIds - Array of image IDs to get small thumbnails for
- * @returns Promise resolving to small thumbnails grouped by imageId
+ * Get all thumbnails for multiple images at once (for all sizes)
+ * @param imageIds - Array of image IDs to get thumbnails for
+ * @returns Promise resolving to thumbnails grouped by imageId (array of thumbnails per image)
  * @throws Error if retrieval fails
  */
-export const getSmallThumbnailsForImages = async (imageIds: string[]) => {
+export const getThumbnailsForImages = async (imageIds: string[]): Promise<Record<string, Schema['Thumbnail']['type'][]>> => {
   try {
-    // Get all small thumbnails (we'll filter client-side since 'in' filter may not be available)
-    const result = await client.models.Thumbnail.list({
-      filter: {
-        size: {
-          eq: THUMBNAIL_SIZES.SMALL.name
-        }
-      }
-    });
-    
+    // Get all thumbnails (we'll filter client-side since 'in' filter may not be available)
+    const result = await client.models.Thumbnail.list({});
     if (result.errors) {
-      throw new Error(`Failed to get small thumbnails for images: ${result.errors.map(e => e.message).join(', ')}`);
+      throw new Error(`Failed to get thumbnails for images: ${result.errors.map(e => e.message).join(', ')}`);
     }
-    
-    // Group small thumbnails by imageId for easy lookup, filtering for requested images
-    const smallThumbnailsByImage: Record<string, any> = {};
-    result.data.forEach(thumbnail => {
+    // Group thumbnails by imageId for easy lookup, filtering for requested images
+    const thumbnailsByImage: Record<string, Schema['Thumbnail']['type'][]> = {};
+    (result.data ?? []).forEach(thumbnail => {
       if (thumbnail.imageId && imageIds.includes(thumbnail.imageId)) {
-        smallThumbnailsByImage[thumbnail.imageId] = thumbnail;
+        if (!thumbnailsByImage[thumbnail.imageId]) {
+          thumbnailsByImage[thumbnail.imageId] = [];
+        }
+        thumbnailsByImage[thumbnail.imageId].push(thumbnail);
       }
     });
-    
-    return smallThumbnailsByImage;
+    return thumbnailsByImage;
   } catch (error) {
-    log.error('Error getting small thumbnails for images:', error);
+    log.error('Error getting thumbnails for images:', error);
     throw error;
   }
 };
@@ -568,7 +586,7 @@ export const getSmallThumbnailsForImages = async (imageIds: string[]) => {
  * @returns Promise resolving to the deleted thumbnail record
  * @throws Error if deletion fails
  */
-export const deleteThumbnail = async (id: string) => {
+export const deleteThumbnail = async (id: string): Promise<Schema['Thumbnail']['type']> => {
   try {
     log.devDebug('Deleting thumbnail record', { thumbnailId: id });
 
@@ -578,6 +596,9 @@ export const deleteThumbnail = async (id: string) => {
       throw new Error(`Failed to delete thumbnail: ${result.errors.map(e => e.message).join(', ')}`);
     }
     
+    if (!result.data) {
+      throw new Error('Failed to delete thumbnail: No data returned');
+    }
     return result.data;
   } catch (error) {
     log.error('Error deleting thumbnail:', error);

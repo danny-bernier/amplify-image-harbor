@@ -7,43 +7,41 @@
  * @version 1.0.0
  */
 
-import { uploadPrivateOriginal, uploadPrivateThumbnail, deleteFile } from '@/services/s3Service';
-import { createImage, CreateImageInput, createThumbnail, CreateThumbnailInput, deleteImage, deleteThumbnail } from '@/services/dbService';
-import { getImageDimensions, isValidImageType, generateImageFileName } from '@/utils/imageUtils';
-import { generateThumbnails } from '@/utils/thumbnailUtils';
-import { THUMBNAIL_SIZES } from '@/types/thumbnail';
+import { 
+  createImage, 
+  CreateImageInput, 
+  createThumbnail, 
+  CreateThumbnailInput, 
+  deleteImage, 
+  deleteThumbnail 
+} from '@/services/dbService';
+
+import { 
+  getImageDimensions, 
+  isValidImageType, 
+  generateImageFileName 
+} from '@/utils/imageUtils';
+
+import { 
+  THUMBNAIL_SIZES, 
+  S3Image, 
+  ThumbnailData, 
+  ImageData, 
+  ImageMetadata,
+} from '@/types/images';
+
+import { 
+  uploadPrivateOriginal, 
+  uploadPrivateThumbnail, 
+  deleteFile 
+} from '@/services/s3Service';
+
+import { generateThumbnails } from '@/utils/imageUtils';
 import { logger } from '@/utils/logger';
 
 // Create component-specific logger
 const log = logger.forComponent('Upload Service');
 
-/**
- * Metadata associated with file uploads
- */
-export interface FileMetadata {
-  title?: string;
-  description?: string;
-  tags?: string | string[];
-  jsonTags?: Record<string, any>;
-}
-
-/**
- * Result object for successful file uploads
- */
-export interface UploadResult {
-  success: boolean;
-  fileName: string;
-  s3Key: string;
-  imageId?: string;
-  title: string;
-  tags: string[];
-  dimensions: { width: number; height: number };
-  thumbnails: {
-    small: { s3Key: string; dbId?: string };
-    medium: { s3Key: string; dbId?: string };
-    large: { s3Key: string; dbId?: string };
-  };
-}
 
 /**
  * Error information for failed file uploads
@@ -60,7 +58,7 @@ export interface BatchUploadResult {
   totalFiles: number;
   successful: number;
   failed: number;
-  results: UploadResult[];
+  results: ImageData[];
   errors?: UploadError[];
 }
 
@@ -79,10 +77,10 @@ export class UploadService {
    */
   async processImageUploads(
     files: File[],
-    fileMetadata: FileMetadata[],
+    fileMetadata: ImageMetadata[],
     batchMetadata: Record<string, any> = {}
   ): Promise<BatchUploadResult> {
-    const results: UploadResult[] = [];
+    const results: ImageData[] = [];
     const errors: UploadError[] = [];
 
     // Process each file
@@ -128,8 +126,15 @@ export class UploadService {
    */
   private async processSingleFile(
     file: File,
-    metadata: FileMetadata = {}
-  ): Promise<UploadResult> {
+    metadata: ImageMetadata = {
+      title: null,
+      description: null,
+      tags: null,
+      jsonTags: null,
+      created: null,
+      lastUpdated: null
+    }
+  ): Promise<ImageData> {
     let s3Key: string | null = null;
     let dbRecordId: string | null = null;
     let thumbnailS3Keys: { small?: string; medium?: string; large?: string } = {};
@@ -164,27 +169,13 @@ export class UploadService {
         tagsType: typeof metadata.tags,
         jsonTagsType: typeof metadata.jsonTags
       });
-      
-      const title = metadata.title || file.name.replace(/\.[^/.]+$/, '');
-      const description = metadata.description || '';
-      const tags = this.parseTags(metadata.tags);
-      
-      log.devDebug('Processed metadata', {
-        fileName: file.name,
-        title,
-        description,
-        parsedTags: tags,
-        parsedTagsLength: tags.length,
-        originalJsonTags: metadata.jsonTags,
-        jsonTagsKeys: metadata.jsonTags ? Object.keys(metadata.jsonTags) : null
-      });
-      
+
       // Step 4: Save original image to database
       const imageData: CreateImageInput = {
-        title,
-        description,
+        title: metadata.title || file.name.replace(/\.[^/.]+$/, ''),
+        description: metadata.description || '',
         s3Key,
-        tags: tags.length > 0 ? tags : undefined,
+        tags: metadata.tags as string[] | undefined,
         jsonTags: metadata.jsonTags && Object.keys(metadata.jsonTags).length > 0 ? metadata.jsonTags : undefined,
         width: dimensions.width,
         height: dimensions.height,
@@ -251,21 +242,34 @@ export class UploadService {
         large: largeDbResult?.id || undefined
       };
 
-      // Success - return complete result
+      // Step 8: Construct S3Image and ThumbnailData objects
+      const s3Image = new S3Image({ s3Key, url: null });
+      const thumbnails: { [K in keyof typeof THUMBNAIL_SIZES]: ThumbnailData | null } = {
+        SMALL: smallS3Key ? {
+          size: THUMBNAIL_SIZES.SMALL,
+          thumbnailId: thumbnailDbIds.small || '',
+          image: new S3Image({ s3Key: smallS3Key, url: null })
+        } : null,
+        MEDIUM: mediumS3Key ? {
+          size: THUMBNAIL_SIZES.MEDIUM,
+          thumbnailId: thumbnailDbIds.medium || '',
+          image: new S3Image({ s3Key: mediumS3Key, url: null })
+        } : null,
+        LARGE: largeS3Key ? {
+          size: THUMBNAIL_SIZES.LARGE,
+          thumbnailId: thumbnailDbIds.large || '',
+          image: new S3Image({ s3Key: largeS3Key, url: null })
+        } : null
+      };
+
+      // Success - return ImageData
       log.info('File upload completed successfully');
       return {
-        success: true,
-        fileName: file.name,
-        s3Key,
-        imageId: dbRecordId,
-        title,
-        tags,
-        dimensions,
-        thumbnails: {
-          small: { s3Key: smallS3Key, dbId: thumbnailDbIds.small },
-          medium: { s3Key: mediumS3Key, dbId: thumbnailDbIds.medium },
-          large: { s3Key: largeS3Key, dbId: thumbnailDbIds.large }
-        }
+        id: dbRecordId,
+        image: s3Image,
+        width: dimensions.width,
+        height: dimensions.height,
+        thumbnails
       };
 
     } catch (error) {
@@ -386,34 +390,6 @@ export class UploadService {
       log.devDebug('Failed thumbnail rollback details', { thumbnailId });
       throw error;
     }
-  }
-
-  /**
-   * Parse tags from various input formats (array, JSON string, or comma-separated string)
-   * @param tags - Tags in any supported format
-   * @returns Array of parsed tag strings (simple tags only)
-   */
-  private parseTags(tags?: string | string[]): string[] {
-    if (!tags) return [];
-
-    if (Array.isArray(tags)) {
-      return tags;
-    }
-
-    if (typeof tags === 'string') {
-      try {
-        // Try to parse as JSON array first
-        const parsed = JSON.parse(tags);
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
-      } catch {
-        // If JSON parsing fails, treat as comma-separated string
-        return tags.split(',').map((tag: string) => tag.trim()).filter(Boolean);
-      }
-    }
-
-    return [];
   }
 }
 

@@ -12,7 +12,8 @@
 import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { GalleryImage } from '@/types/gallery';
-import { getThumbnailForTargetSize } from '@/utils/thumbnailUtils';
+import type { ImageData } from '@/types/images';
+import { getThumbnailSizeForTargetSize } from '@/utils/imageUtils';
 import ImageInspectorControlBar from './ImageInspectorControlBar';
 import FullscreenPreview from '@/components/common/FullscreenPreview';
 import styles from './MultiImageInspector.module.css';
@@ -84,14 +85,21 @@ export default function MultiImageInspector({
   }, [updateContainerWidth]);
 
   // Get optimal thumbnail for preview item
-  const getPreviewThumbnail = useCallback((image: GalleryImage) => {
+  const getPreviewThumbnail = useCallback((image: ImageData) => {
     if (containerWidth === 0) {
       // Fallback while measuring
-      return { url: image.smallThumbnail?.url || image.url };
+      return { url: image.thumbnails.SMALL?.url || image.url };
     }
     
     const itemWidth = calculatePreviewItemWidth(containerWidth);
-    return getThumbnailForTargetSize(image, itemWidth);
+    const optimalSize = getThumbnailSizeForTargetSize(itemWidth);
+    
+    if (optimalSize) {
+      const thumbnail = image.thumbnails[optimalSize.name as keyof typeof image.thumbnails];
+      return { url: thumbnail?.url || image.url };
+    }
+    
+    return { url: image.url };
   }, [containerWidth, calculatePreviewItemWidth]);
 
   const handleImageClick = (image: GalleryImage) => {

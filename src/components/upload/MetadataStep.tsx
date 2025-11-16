@@ -11,7 +11,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { SelectedFile, FileMetadata } from './UploadWizard';
+import { SelectedFile, FileMetadata } from './Upload';
 import FullscreenPreview from '@/components/common/FullscreenPreview';
 import styles from './MetadataStep.module.css';
 

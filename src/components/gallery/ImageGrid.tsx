@@ -9,148 +9,101 @@
 
 'use client';
 
-import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { ImageGridProps } from '@/types/gallery';
-import { THUMBNAIL_SIZES, ThumbnailSizeName } from '@/types/thumbnail';
-import { getOptimalThumbnailSize, getBestThumbnail } from '@/utils/thumbnailUtils';
+import { THUMBNAIL_SIZES, ThumbnailSize } from '@/types/images';
+import { getThumbnailSizeForTargetSize, getThumbnailOrOriginal } from '@/utils/imageUtils';
 import styles from './ImageGrid.module.css';
+import Promisedimage from '@/components/common/PromisedImage';
+import type { HarborImage } from '@/types/images';
 
-export default function ImageGrid({ images, selectedImage, selectedImages, onImageSelect, onLoadThumbnail }: ImageGridProps) {
+export interface ImageGridProps {
+  harborImages: HarborImage[];
+  selectedHarborImages: HarborImage[];
+  onImageSelect: (image: HarborImage, isMultiSelect?: boolean) => void;
+}
+
+export default function ImageGrid({ harborImages: hImages, selectedHarborImages: selectedImages, onImageSelect }: ImageGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
-  const [_, setContainerWidth] = useState(0);
-  const [optimalThumbnailSizes, setOptimalThumbnailSizes] = useState<Record<string, ThumbnailSizeName>>({});
+  const [containerWidth, setContainerWidth] = useState<number>(0); // used to track if width changed when resizing
+  const [targetThumbnailSize, setTargetThumbnailSize] = useState<ThumbnailSize | null>(THUMBNAIL_SIZES.SMALL); // used to track current target size for thumbnails
 
-  // Use the extracted optimal thumbnail size calculation
-  const getOptimalSize = useCallback((displayWidth: number): ThumbnailSizeName => {
-    return getOptimalThumbnailSize(displayWidth) as ThumbnailSizeName;
-  }, []);
 
-  // Calculate grid item width based on container width and CSS grid settings
-  const calculateGridItemWidth = useCallback((containerWidth: number): number => {
+  // Helper for grid item width calculation
+  const getGridItemWidth = (containerWidth: number) => {
     const gap = 16; // 1rem gap in pixels
     const minItemWidth = window.matchMedia('(min-aspect-ratio: 16/9)').matches ? 300 : 250;
-    
-    // Calculate how many items fit per row
     const itemsPerRow = Math.floor((containerWidth + gap) / (minItemWidth + gap));
-    if (itemsPerRow <= 0) return minItemWidth;
-    
-    // Calculate actual item width
-    return Math.floor((containerWidth - gap * (itemsPerRow - 1)) / itemsPerRow);
-  }, []);
+    return itemsPerRow <= 0 ? minItemWidth : Math.floor((containerWidth - gap * (itemsPerRow - 1)) / itemsPerRow);
+  };
 
-  // Update container width and recalculate optimal thumbnail sizes
-  const updateOptimalSizes = useCallback(() => {
+  // Update container width and recalculate target thumbnail size
+  const updateTargetThumbnailSize = useCallback(() => {
     if (!gridRef.current) return;
-    
+
+    // check if width changed
     const newWidth = gridRef.current.offsetWidth;
+    if (newWidth === containerWidth) return; // Width didnt change so no need to check if target size changed
+
     setContainerWidth(newWidth);
-    
-    const itemWidth = calculateGridItemWidth(newWidth);
-    const optimalSize = getOptimalSize(itemWidth);
-    
-    // Update optimal sizes for all images
-    const newOptimalSizes: Record<string, ThumbnailSizeName> = {};
-    images.forEach(image => {
-      newOptimalSizes[image.id] = optimalSize;
-    });
-    setOptimalThumbnailSizes(newOptimalSizes);
-  }, [images, calculateGridItemWidth, getOptimalThumbnailSize]);
+    const newItemWidth = getGridItemWidth(newWidth);
+    const newTargetThumbnailSize = getThumbnailSizeForTargetSize(newItemWidth);
+    if (newTargetThumbnailSize === targetThumbnailSize) return; // Target size didnt change so no need to update
+    setTargetThumbnailSize(newTargetThumbnailSize);
+  }, [hImages]);
 
   // Resize observer to track container size changes
   useEffect(() => {
     if (!gridRef.current) return;
 
     const resizeObserver = new ResizeObserver(() => {
-      updateOptimalSizes();
+      updateTargetThumbnailSize();
     });
 
     resizeObserver.observe(gridRef.current);
-    
+
     // Initial calculation
-    updateOptimalSizes();
+    updateTargetThumbnailSize();
 
     return () => resizeObserver.disconnect();
-  }, [updateOptimalSizes]);
-
-  // Load optimal thumbnails when sizes change
-  useEffect(() => {
-    Object.entries(optimalThumbnailSizes).forEach(([imageId, targetSize]) => {
-      const image = images.find(img => img.id === imageId);
-      if (!image) return;
-
-      // Check if we need to load this thumbnail size
-      let needsLoading = false;
-      
-      if (targetSize === THUMBNAIL_SIZES.MEDIUM.name && !image.mediumThumbnail) {
-        needsLoading = true;
-      } else if (targetSize === THUMBNAIL_SIZES.LARGE.name && !image.largeThumbnail) {
-        needsLoading = true;
-      }
-      
-      if (needsLoading) {
-        onLoadThumbnail(imageId, targetSize);
-      }
-    });
-  }, [optimalThumbnailSizes, images, onLoadThumbnail]);
-
-  // Get the best available thumbnail for an image using the extracted utility
-  const getImageThumbnail = useCallback((image: any) => {
-    const optimalSize = optimalThumbnailSizes[image.id];
-    return getBestThumbnail(image, optimalSize);
-  }, [optimalThumbnailSizes]);
+  }, [updateTargetThumbnailSize]);
 
   return (
-    <div className={styles.container}>      
+    <div className={styles.container}>
       <div className={styles.scrollArea}>
         <div ref={gridRef} className={styles.grid}>
-          {images.map((image) => {
-            const isSelected = selectedImage?.id === image.id;
-            const isMultiSelected = selectedImages.some(img => img.id === image.id);
+          {hImages.map((hImage) => {
+            const isMultiSelected = selectedImages.some(img => img.id === hImage.id);
             const hasMultiSelection = selectedImages.length > 0;
-            
             return (
-              <div 
-                key={image.id} 
-                className={`${styles.item} cursor-pointer ${isSelected ? styles.selected : ''} ${isMultiSelected ? styles.multiSelected : ''}`}
+              <div
+                key={hImage.id}
+                className={`${styles.item} cursor-pointer ${isMultiSelected ? styles.multiSelected : ''}`}
                 onClick={(e) => {
                   const isCtrlClick = e.ctrlKey || e.metaKey;
                   const isShiftClick = e.shiftKey;
-                  
                   if (isCtrlClick || isShiftClick || hasMultiSelection) {
-                    // Multi-selection mode
-                    onImageSelect(image, true);
+                    onImageSelect(hImage, true);
                   } else {
-                    // Single selection mode
-                    if (isSelected) {
-                      // Clicking on already selected image deselects it
-                      onImageSelect(image, false);
-                    } else {
-                      onImageSelect(image, false);
-                    }
+                    onImageSelect(hImage, false);
                   }
                 }}
               >
                 <div className={styles.imageContainer}>
-                  <Image
-                    src={getImageThumbnail(image).url}
-                    alt={image.description || image.title || 'Uploaded image'}
-                    width={300}
-                    height={225}
-                    className={styles.image}
-                    unoptimized // For S3 URLs
-                  />
+                  {(() => {
+                    const s3img = getThumbnailOrOriginal(hImage, targetThumbnailSize);
+                    return <Promisedimage
+                      url={s3img.getUrl()}
+                      alt={hImage.description || hImage.title || 'Uploaded image'}
+                      width={300}
+                      height={225}
+                      className={styles.image}
+                      unoptimized
+                    />;
+                  })()}
                 </div>
                 <div className={styles.content}>
-                  {image.title && (
-                    <p className={styles.title}>
-                      {image.title}
-                    </p>
-                  )}
-                  {image.description && (
-                    <p className={styles.description}>
-                      {image.description}
-                    </p>
+                  {'title' in hImage && hImage.title && (
+                    <p className={styles.title}>{hImage.title}</p>
                   )}
                 </div>
               </div>

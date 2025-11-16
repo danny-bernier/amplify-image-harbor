@@ -1,18 +1,19 @@
 'use client';
 
+import PromisedImage from './PromisedImage';
 import styles from './FullscreenPreview.module.css';
 
 interface FullscreenPreviewProps {
-  url: string;
+  url: string | Promise<string>;
   altText: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function FullscreenPreview({ 
-  url, 
-  altText, 
-  isOpen, 
+export default function FullscreenPreview({
+  url,
+  altText,
+  isOpen,
   onClose
 }: FullscreenPreviewProps) {
   if (!isOpen) {
@@ -35,9 +36,8 @@ export default function FullscreenPreview({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
-
-      <img
-        src={url}
+      <PromisedImage
+        url={url}
         alt={altText}
         className={styles.image}
         onClick={(e) => e.stopPropagation()}
