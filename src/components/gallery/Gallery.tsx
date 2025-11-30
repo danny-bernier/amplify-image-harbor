@@ -19,7 +19,6 @@ import styles from './Gallery.module.css';
 import ImageGrid from './ImageGrid';
 import { ImageInspector } from './image-inspector';
 import FullscreenPreview from '@/components/common/FullscreenPreview';
-import Promisedimage from '@/components/common/PromisedImage';
 
 // Create component-specific logger
 const log = logger.forComponent('Gallery');
@@ -29,6 +28,7 @@ export default function Gallery() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedHImages, setSelectedHImages] = useState<HarborImage[]>([]);
+  const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const [splitRatio, setSplitRatio] = useState(50); // Percentage for top panel vs bottom panel
   const [isDragging, setIsDragging] = useState(false);
@@ -86,17 +86,63 @@ export default function Gallery() {
     fetchImages();
   }, []);
 
-  const handleImageSelect = (hImage: HarborImage, isMultiSelect: boolean = false) => {
-    if (hImages.find(img => img.id === hImage.id)) {
-      log.devDebug('Deselecting image:', hImage.id);
-      setSelectedHImages(prev => prev.filter(img => img.id !== hImage.id));
-    } else if (isMultiSelect) {
-      log.debug('Selecting image:', hImage.id);
-      setSelectedHImages(prev => [...prev, hImage]);
-    } else {
-      log.debug('Selecting single image:', hImage.id);
-      setSelectedHImages([hImage]);
+  const handleImageSelect = (hImage: HarborImage, options?: { multi?: boolean; range?: boolean }) => {
+    const isMultiSelect = Boolean(options?.multi);
+    const isRangeSelect = Boolean(options?.range);
+
+    // SHIFT-range selection (select all items between lastSelectedId and clicked image)
+    if (isRangeSelect) {
+      // Determine anchor: prefer lastSelectedId, else the last selected image id, else clicked image
+      const anchorId = lastSelectedId ?? (selectedHImages.length ? selectedHImages[selectedHImages.length - 1]?.id : null) ?? hImage.id;
+      const allIds = hImages.map(img => img.id);
+      const anchorIndex = allIds.indexOf(anchorId);
+      const targetIndex = allIds.indexOf(hImage.id);
+      if (anchorIndex === -1 || targetIndex === -1) {
+        // Fallback to single select if indices aren't found
+        setSelectedHImages([hImage]);
+        setLastSelectedId(hImage.id);
+        return;
+      }
+
+      const start = Math.min(anchorIndex, targetIndex);
+      const end = Math.max(anchorIndex, targetIndex);
+      const range = hImages.slice(start, end + 1);
+
+      // Union the computed range with any existing selection (deduplicated).
+      // This preserves other selected items (e.g., image 6) while adding the range.
+      const existingById = new Map(selectedHImages.map(i => [i.id, i] as [string, HarborImage]));
+      const union = [...selectedHImages];
+      let addedCount = 0;
+      for (const img of range) {
+        if (!existingById.has(img.id)) {
+          union.push(img);
+          addedCount++;
+        }
+      }
+      setSelectedHImages(union);
+      log.devDebug('Added range to existing selection (union)', { anchorId, start, end, added: addedCount, total: union.length });
+
+      setLastSelectedId(hImage.id);
+      return;
     }
+
+    // Multi-select toggling (Ctrl/Cmd-click)
+    if (isMultiSelect) {
+      if (selectedHImages.find(img => img.id === hImage.id)) {
+        log.devDebug('Deselecting image (multi):', hImage.id);
+        setSelectedHImages(prev => prev.filter(img => img.id !== hImage.id));
+      } else {
+        log.debug('Selecting image (multi):', hImage.id);
+        setSelectedHImages(prev => [...prev, hImage]);
+        setLastSelectedId(hImage.id);
+      }
+      return;
+    }
+
+    // Default single-select (replace selection)
+    log.debug('Selecting single image:', hImage.id);
+    setSelectedHImages([hImage]);
+    setLastSelectedId(hImage.id);
   };
 
   const handleClearSelectedHImages = () => {

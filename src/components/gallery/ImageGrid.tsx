@@ -9,68 +9,47 @@
 
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { THUMBNAIL_SIZES, ThumbnailSize } from '@/types/images';
-import { getThumbnailSizeForTargetSize, getThumbnailOrOriginal } from '@/utils/imageUtils';
+import { useRef } from 'react';
+import { getImageForTargetSize } from '@/utils/imageUtils';
 import styles from './ImageGrid.module.css';
 import Promisedimage from '@/components/common/PromisedImage';
 import type { HarborImage } from '@/types/images';
+import { THUMBNAIL_SIZES } from '@/types/images';
 
 export interface ImageGridProps {
   harborImages: HarborImage[];
   selectedHarborImages: HarborImage[];
-  onImageSelect: (image: HarborImage, isMultiSelect?: boolean) => void;
+  onImageSelect: (image: HarborImage, options?: { multi?: boolean; range?: boolean }) => void;
+  // imageSize is a sliding scale in pixels (target thumbnail width). Defaults to 300.
+  imageSize?: number;
 }
 
-export default function ImageGrid({ harborImages: hImages, selectedHarborImages: selectedImages, onImageSelect }: ImageGridProps) {
+export default function ImageGrid({
+  harborImages: hImages,
+  selectedHarborImages: selectedImages,
+  onImageSelect,
+  imageSize = THUMBNAIL_SIZES.MEDIUM.value
+}: ImageGridProps) {
+
   const gridRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState<number>(0); // used to track if width changed when resizing
-  const [targetThumbnailSize, setTargetThumbnailSize] = useState<ThumbnailSize | null>(THUMBNAIL_SIZES.SMALL); // used to track current target size for thumbnails
+  // Display dimensions derived from the selected thumbnail size
+  const imageWidth = imageSize;
+  const imageHeight = Math.round(imageWidth * 0.75); // 4:3 default aspect ratio
 
-
-  // Helper for grid item width calculation
-  const getGridItemWidth = (containerWidth: number) => {
-    const gap = 16; // 1rem gap in pixels
-    const minItemWidth = window.matchMedia('(min-aspect-ratio: 16/9)').matches ? 300 : 250;
-    const itemsPerRow = Math.floor((containerWidth + gap) / (minItemWidth + gap));
-    return itemsPerRow <= 0 ? minItemWidth : Math.floor((containerWidth - gap * (itemsPerRow - 1)) / itemsPerRow);
+  // Ensure the grid never renders items wider than the configured thumbnail width.
+  // We set an explicit column width so the browser will fit as many columns
+  // as possible given the container size. Using `auto-fill` creates new
+  // columns of the fixed thumbnail width; the grid will wrap when there is
+  // insufficient space which keeps thumbnails from exceeding `imageWidth`.
+  const gridStyle: React.CSSProperties = {
+    gridTemplateColumns: `repeat(auto-fill, ${imageWidth}px)`,
+    justifyContent: 'center'
   };
-
-  // Update container width and recalculate target thumbnail size
-  const updateTargetThumbnailSize = useCallback(() => {
-    if (!gridRef.current) return;
-
-    // check if width changed
-    const newWidth = gridRef.current.offsetWidth;
-    if (newWidth === containerWidth) return; // Width didnt change so no need to check if target size changed
-
-    setContainerWidth(newWidth);
-    const newItemWidth = getGridItemWidth(newWidth);
-    const newTargetThumbnailSize = getThumbnailSizeForTargetSize(newItemWidth);
-    if (newTargetThumbnailSize === targetThumbnailSize) return; // Target size didnt change so no need to update
-    setTargetThumbnailSize(newTargetThumbnailSize);
-  }, [hImages]);
-
-  // Resize observer to track container size changes
-  useEffect(() => {
-    if (!gridRef.current) return;
-
-    const resizeObserver = new ResizeObserver(() => {
-      updateTargetThumbnailSize();
-    });
-
-    resizeObserver.observe(gridRef.current);
-
-    // Initial calculation
-    updateTargetThumbnailSize();
-
-    return () => resizeObserver.disconnect();
-  }, [updateTargetThumbnailSize]);
 
   return (
     <div className={styles.container}>
       <div className={styles.scrollArea}>
-        <div ref={gridRef} className={styles.grid}>
+        <div ref={gridRef} className={styles.grid} style={gridStyle}>
           {hImages.map((hImage) => {
             const isMultiSelected = selectedImages.some(img => img.id === hImage.id);
             const hasMultiSelection = selectedImages.length > 0;
@@ -78,24 +57,29 @@ export default function ImageGrid({ harborImages: hImages, selectedHarborImages:
               <div
                 key={hImage.id}
                 className={`${styles.item} cursor-pointer ${isMultiSelected ? styles.multiSelected : ''}`}
+                onMouseDown={(e) => {
+                  // Prevent accidental text selection when the user is doing a Shift+click range selection.
+                  if (e.shiftKey) {
+                    e.preventDefault();
+                  }
+                }}
                 onClick={(e) => {
                   const isCtrlClick = e.ctrlKey || e.metaKey;
                   const isShiftClick = e.shiftKey;
-                  if (isCtrlClick || isShiftClick || hasMultiSelection) {
-                    onImageSelect(hImage, true);
-                  } else {
-                    onImageSelect(hImage, false);
-                  }
+                  // Single click selects only that image; Ctrl/Cmd-click toggles multi-select
+                  // Shift-click requests a range selection from the last-selected anchor to this image.
+                  onImageSelect(hImage, { multi: isCtrlClick, range: isShiftClick });
                 }}
               >
                 <div className={styles.imageContainer}>
                   {(() => {
-                    const s3img = getThumbnailOrOriginal(hImage, targetThumbnailSize);
+                    // Select the thumbnail by the configured size name; fall back to original if missing
+                    const s3img = getImageForTargetSize(hImage, imageWidth);
                     return <Promisedimage
                       url={s3img.getUrl()}
                       alt={hImage.description || hImage.title || 'Uploaded image'}
-                      width={300}
-                      height={225}
+                      width={imageWidth}
+                      height={imageHeight}
                       className={styles.image}
                       unoptimized
                     />;

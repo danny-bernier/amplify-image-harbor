@@ -188,7 +188,7 @@ export function MetadataStep({
                     type="text"
                     value={metadata.title || ''}
                     onChange={(e) => updateMetadata(file.id, 'title', e.target.value)}
-                    placeholder="Enter a title for this image"
+                    placeholder="Enter a title for this image (will be file name if left blank)"
                     className={styles.fieldInput}
                   />
                 </div>

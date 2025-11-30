@@ -11,7 +11,6 @@ import {
   createImage, 
   CreateImageInput, 
   createThumbnail, 
-  CreateThumbnailInput, 
   deleteImage, 
   deleteThumbnail 
 } from '@/services/dbService';
@@ -137,8 +136,8 @@ export class UploadService {
   ): Promise<ImageData> {
     let s3Key: string | null = null;
     let dbRecordId: string | null = null;
-    let thumbnailS3Keys: { small?: string; medium?: string; large?: string } = {};
-    let thumbnailDbIds: { small?: string; medium?: string; large?: string } = {};
+    let thumbnailS3Keys: Partial<Record<keyof typeof THUMBNAIL_SIZES, string>> = {};
+    let thumbnailDbIds: Partial<Record<keyof typeof THUMBNAIL_SIZES, string>> = {};
 
     try {
       log.devDebug('Processing file for client-side upload', { fileName: file.name });
@@ -198,69 +197,51 @@ export class UploadService {
       const baseFilename = fileName.replace(/\.[^/.]+$/, ''); // Remove extension for thumbnail naming
       const thumbnailResults = await generateThumbnails(file, baseFilename);
 
-      // Step 6: Upload thumbnails to S3
-      const [smallS3Key, mediumS3Key, largeS3Key] = await Promise.all([
-        uploadPrivateThumbnail(thumbnailResults.small.file, thumbnailResults.small.file.name),
-        uploadPrivateThumbnail(thumbnailResults.medium.file, thumbnailResults.medium.file.name),
-        uploadPrivateThumbnail(thumbnailResults.large.file, thumbnailResults.large.file.name),
-      ]);
 
-      thumbnailS3Keys = {
-        small: smallS3Key,
-        medium: mediumS3Key,
-        large: largeS3Key
-      };
+      // Step 6: Upload thumbnails to S3 for all configured sizes (order preserved from THUMBNAIL_SIZES)
+      const sizeKeys = Object.keys(THUMBNAIL_SIZES) as (keyof typeof THUMBNAIL_SIZES)[];
+      const uploadResults = await Promise.all(sizeKeys.map(k => {
+        const thumb = (thumbnailResults as any)[k];
+        return uploadPrivateThumbnail(thumb.file, thumb.file.name);
+      }));
 
-      // Step 7: Create thumbnail database records
-      const smallThumbnailData: CreateThumbnailInput = {
-        imageId: dbRecordId,
-        s3Key: smallS3Key,
-        size: THUMBNAIL_SIZES.SMALL.name
-      };
+      // Map upload results back to keys
+      sizeKeys.forEach((k, idx) => {
+        thumbnailS3Keys[k] = uploadResults[idx];
+      });
 
-      const mediumThumbnailData: CreateThumbnailInput = {
-        imageId: dbRecordId,
-        s3Key: mediumS3Key,
-        size: THUMBNAIL_SIZES.MEDIUM.name
-      };
+      // Step 7: Create thumbnail database records for each size in parallel
+      const createThumbnailPromises = sizeKeys.map(k => {
+        const s3k = thumbnailS3Keys[k]!;
+        const payload = {
+          imageId: dbRecordId!,
+          s3Key: s3k,
+          size: THUMBNAIL_SIZES[k].name
+        };
+        return createThumbnail(payload);
+      });
 
-      const largeThumbnailData: CreateThumbnailInput = {
-        imageId: dbRecordId,
-        s3Key: largeS3Key,
-        size: THUMBNAIL_SIZES.LARGE.name
-      };
-
-      const [smallDbResult, mediumDbResult, largeDbResult] = await Promise.all([
-        createThumbnail(smallThumbnailData),
-        createThumbnail(mediumThumbnailData),
-        createThumbnail(largeThumbnailData)
-      ]);
-
-      thumbnailDbIds = {
-        small: smallDbResult?.id || undefined,
-        medium: mediumDbResult?.id || undefined,
-        large: largeDbResult?.id || undefined
-      };
+      const createdDbResults = await Promise.all(createThumbnailPromises);
+      createdDbResults.forEach((res, idx) => {
+        const k = sizeKeys[idx];
+        thumbnailDbIds[k] = res?.id || undefined;
+      });
 
       // Step 8: Construct S3Image and ThumbnailData objects
       const s3Image = new S3Image({ s3Key, url: null });
-      const thumbnails: { [K in keyof typeof THUMBNAIL_SIZES]: ThumbnailData | null } = {
-        SMALL: smallS3Key ? {
-          size: THUMBNAIL_SIZES.SMALL,
-          thumbnailId: thumbnailDbIds.small || '',
-          image: new S3Image({ s3Key: smallS3Key, url: null })
-        } : null,
-        MEDIUM: mediumS3Key ? {
-          size: THUMBNAIL_SIZES.MEDIUM,
-          thumbnailId: thumbnailDbIds.medium || '',
-          image: new S3Image({ s3Key: mediumS3Key, url: null })
-        } : null,
-        LARGE: largeS3Key ? {
-          size: THUMBNAIL_SIZES.LARGE,
-          thumbnailId: thumbnailDbIds.large || '',
-          image: new S3Image({ s3Key: largeS3Key, url: null })
-        } : null
-      };
+      const thumbnails = Object.fromEntries(
+        (Object.keys(THUMBNAIL_SIZES) as (keyof typeof THUMBNAIL_SIZES)[]).map(k => {
+          const s3k = thumbnailS3Keys[k];
+          return [
+            k,
+            s3k ? {
+              size: THUMBNAIL_SIZES[k],
+              thumbnailId: thumbnailDbIds[k] || '',
+              image: new S3Image({ s3Key: s3k, url: null })
+            } : null
+          ];
+        })
+      ) as { [K in keyof typeof THUMBNAIL_SIZES]: ThumbnailData | null };
 
       // Success - return ImageData
       log.info('File upload completed successfully');
@@ -292,8 +273,8 @@ export class UploadService {
   private async rollbackFileUpload(
     s3Key: string | null,
     dbRecordId: string | null,
-    thumbnailS3Keys: { small?: string; medium?: string; large?: string } = {},
-    thumbnailDbIds: { small?: string; medium?: string; large?: string } = {}
+    thumbnailS3Keys: Partial<Record<keyof typeof THUMBNAIL_SIZES, string>> = {},
+    thumbnailDbIds: Partial<Record<keyof typeof THUMBNAIL_SIZES, string>> = {}
   ): Promise<void> {
     const cleanupPromises: Promise<void>[] = [];
 

@@ -18,6 +18,8 @@ const schema = a.schema({
     .model({
       title: a.string().default(() => new Date().toISOString()),
       description: a.string(),
+      derivedFrom: a.id(), // If this image is a derived/edited variant, `derivedFrom` points to the original Image id
+      type: a.enum(['ORIGINAL', 'EDITED']), // type differentiates original images from edited/derived images
       width: a.integer().required(), // Example 1920
       height: a.integer().required(), // Example 1080
       s3Key: a.string().required(),
@@ -25,20 +27,7 @@ const schema = a.schema({
       jsonTags: a.json(), // JSON object for key-value tags only
       created: a.datetime().required(),
       lastUpdated: a.datetime().required(),
-    })
-    .authorization((allow) => [
-      allow.owner().to([...ownerPermissions]), // Creates 'owner' field
-      allow.authenticated().to([...authenticatedPermissions]), // Anyone who is authenticated
-    ]),
-  
-  Edited: a
-    .model({
-      imageId: a.id(), // Reference to original image
-      s3Key: a.string().required(),
-      width: a.integer().required(), // Example 1920
-      height: a.integer().required(), // Example 1080
-      created: a.datetime().required(),
-      lastUpdated: a.datetime().required(),
+      metadata: a.json(), // optional metadata
     })
     .authorization((allow) => [
       allow.owner().to([...ownerPermissions]), // Creates 'owner' field
@@ -49,13 +38,43 @@ const schema = a.schema({
     .model({
       imageId: a.id().required(), // Reference to original Image
       s3Key: a.string().required(), // Thumbnail file path
-      size: a.enum(['SMALL', 'MEDIUM', 'LARGE']), // Different thumbnail sizes
+      size: a.enum(['SMALL', 'MEDIUM', 'LARGE', 'HUGE']), // Different thumbnail sizes
       created: a.datetime().required(),
       lastUpdated: a.datetime().required(),
+      metadata: a.json(), // optional metadata
     })
     .authorization((allow) => [
       allow.owner().to([...ownerPermissions]), // Creates 'owner' field
       allow.authenticated().to([...authenticatedPermissions]), // Anyone who is authenticated
+    ]),
+
+  Collection: a
+    .model({
+      title: a.string().default(() => new Date().toISOString()),
+      description: a.string(),
+      tags: a.string().array(),
+      jsonTags: a.json(),
+      s3Key: a.string(), // will store a zip file S3 key for the whole collection
+      created: a.datetime().required(),
+      lastUpdated: a.datetime().required(),
+      metadata: a.json(), // optional metadata
+    })
+    .authorization((allow) => [
+      allow.owner().to([...ownerPermissions]),
+      allow.authenticated().to([...authenticatedPermissions]),
+    ]),
+
+  CollectionImageMap: a
+    .model({
+      collectionId: a.id().required(), // reference to Collection
+      imageId: a.id().required(), // reference to Image
+      addedAt: a.datetime().required(),
+      position: a.integer(), // optional ordering within the collection
+      metadata: a.json(), // optional per-membership metadata
+    })
+    .authorization((allow) => [
+      allow.owner().to([...ownerPermissions]),
+      allow.authenticated().to([...authenticatedPermissions]),
     ]),
 });
 

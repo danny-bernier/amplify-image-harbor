@@ -62,23 +62,25 @@ export async function generateThumbnails(
     const img = await createImageFromFile(file);
 
     try {
-      // Generate all three thumbnail sizes in parallel
-      log.debug('Generating thumbnails in parallel');
-      const [small, medium, large] = await Promise.all([
-        generateSingleThumbnail(img, THUMBNAIL_SIZES.SMALL, filename),
-        generateSingleThumbnail(img, THUMBNAIL_SIZES.MEDIUM, filename),
-        generateSingleThumbnail(img, THUMBNAIL_SIZES.LARGE, filename),
-      ]);
+      // Generate thumbnails for all configured sizes in parallel
+      log.debug('Generating thumbnails for configured sizes in parallel');
+      const sizes = Object.values(THUMBNAIL_SIZES) as ThumbnailSize[];
+      const generationPromises = sizes.map((s) => generateSingleThumbnail(img, s, filename));
+      const results = await Promise.all(generationPromises);
+
+      // Build a result object keyed by the ThumbnailSizeKey (which matches the size.name values)
+      const resultObj = results.reduce((acc, res) => {
+        acc[res.size.name as keyof typeof THUMBNAIL_SIZES] = res;
+        return acc;
+      }, {} as Record<string, ThumbnailResult>);
 
       log.debug('All thumbnails generated successfully');
       log.devDebug('Generated thumbnail details', {
         originalFileName: file.name,
-        small: { width: small.width, height: small.height },
-        medium: { width: medium.width, height: medium.height },
-        large: { width: large.width, height: large.height }
+        generated: Object.keys(resultObj).map(k => ({ key: k, dims: { w: resultObj[k].width, h: resultObj[k].height } }))
       });
 
-      return { small, medium, large };
+      return resultObj as ThumbnailGenerationResult;
     } finally {
       // Clean up the image URL
       URL.revokeObjectURL(img.src);

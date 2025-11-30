@@ -36,12 +36,14 @@ export default function FullscreenPreview({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
-      <PromisedImage
-        url={url}
-        alt={altText}
-        className={styles.image}
-        onClick={(e) => e.stopPropagation()}
-      />
+      <div className={styles.imageContainer} onClick={(e) => e.stopPropagation()}>
+        <PromisedImage
+          url={url}
+          alt={altText}
+          fill
+          className={styles.image}
+        />
+      </div>
     </div>
   );
 }

@@ -1,46 +1,57 @@
 # Copilot Instructions for amplify-image-harbor
 
-## Project Overview
-- This is a Next.js app (see `src/app/`) for image management, built with TypeScript and modular React components.
-- Backend logic and cloud resources are managed in the `amplify/` directory, using AWS Amplify (see `amplify/backend.ts`, `amplify/auth/`, `amplify/data/`, `amplify/storage/`).
-- The app is structured for clear separation between UI (`src/app/`, `src/components/`), services (`src/services/`), and utility logic (`src/utils/`).
+Purpose: concise, actionable guidance so an AI coding assistant can be productive immediately.
 
-## Key Patterns & Conventions
-- **Component Structure:**
-  - Pages live in `src/app/` (e.g., `gallery/page.tsx`, `admin/page.tsx`).
-  - Reusable UI components are in `src/components/`, grouped by feature (e.g., `gallery/`, `upload/`, `common/`).
-  - Use CSS modules for styling (e.g., `Gallery.module.css`).
-- **Services:**
-  - All data, S3, and upload logic is abstracted in `src/services/` (`dbService.ts`, `s3Service.ts`, `uploadService.ts`).
-  - UI components should call these services for backend interactions, not access AWS SDKs directly.
-- **Types:**
-  - Shared types are defined in `src/types/` (e.g., `gallery.ts`, `images.ts`).
-  - Always import types from here for cross-component consistency.
-- **Utilities:**
-  - Common helpers (e.g., image processing, logging) are in `src/utils/`.
+Project overview
+- Next.js app (see `src/app/`) using the App Router; UI is React + TypeScript.
+- Backend and cloud resources are defined under `amplify/` (see `amplify/backend.ts`, and resource files under `amplify/*`).
+- Code is organized into UI, services, types, and utilities:
+  - UI: `src/app/` for pages and `src/components/` for reusable pieces (e.g., `gallery/`, `upload/`, `common/`).
+  - Services: `src/services/` contains `dbService.ts`, `s3Service.ts`, `uploadService.ts`, `imageService.ts` — these encapsulate all backend logic.
+  - Types: shared interfaces live in `src/types/` (e.g., `images.ts`).
+  - Utils: helpers live in `src/utils/` (e.g., `imageUtils.ts`, `logger.ts`).
 
-## Developer Workflows
-- **Start local dev:** Use `npm run dev` (Next.js frontend) and `start-local.sh` for full-stack local setup.
-- **Amplify:** Backend resources are managed via the `amplify/` directory. Use Amplify CLI for updates.
-- **Styling:** Use CSS modules, colocated with components. Avoid global styles except in `app/globals.css`.
-- **Adding Features:**
-  - Place new pages in `src/app/`.
-  - Add new components under `src/components/` by feature.
-  - Add new backend logic in `amplify/` and expose via services in `src/services/`.
+Big-picture architecture & data flow (what to know)
+- The UI never talks to AWS SDKs directly; it calls service functions in `src/services/` which centralize DB, S3, and upload behavior.
+- Upload flow example: `src/components/upload/*` -> `src/services/uploadService.ts` -> `src/services/s3Service.ts` (+ `dbService.ts` for metadata).
+- Image viewing: gallery components (`src/components/gallery/*`) call `imageService.ts` and use `PromisedImage.tsx` for robust loading and placeholders.
+- Amplify is the authoritative definition for cloud resources; changes to schema/resource files in `amplify/` must be applied via the Amplify CLI.
 
-## Integration Points
-- **Frontend ↔ Backend:** UI calls service functions in `src/services/`, which handle all API/storage/database logic.
-- **Amplify:** All cloud resource definitions and logic are in `amplify/`.
+Conventions and patterns (project-specific)
+- CSS modules: all component styles use colocated CSS modules (e.g., `Gallery.module.css`, `Upload.module.css`).
+- Feature folders: group UI components by feature under `src/components/<feature>/` and export an `index.ts` where appropriate.
+- Single source of truth for types: import types from `src/types/` rather than redefining shape in components.
+- Services are the integration boundary: put fetch/s3/db logic in `src/services/*` and keep components focused on rendering/state.
+- Use `PromisedImage.tsx` for images to get consistent loading/fallback behavior across gallery/inspector components.
 
-## Examples
-- To add a new image upload step, create a component in `src/components/upload/` and update `src/services/uploadService.ts`.
-- To add a new data model, update `amplify/data/resource.ts` and corresponding types in `src/types/`.
+Developer workflows & useful commands
+- Run frontend dev server: `npm run dev` (Next.js). Use `start-local.sh` to start the full local environment used during development.
+- There are helper scripts: `start-local-frontend.sh` and `start-local-sandbox.sh` — check `start-local.sh` to see how they are composed.
+- Build: `npm run build` (standard Next.js build). If CI exists, follow pipeline defined in repo (not present here).
+- Amplify edits: change files under `amplify/` and then use the Amplify CLI to push cloud changes. For local testing, `start-local.sh` is the canonical entry.
 
-## References
-- See `README.md` for Next.js basics and dev server instructions.
-- See `amplify/` for backend resource structure.
-- See `src/services/` for all backend communication patterns.
+Where to make common changes (examples)
+- Add a page: create a new folder under `src/app/` with a `page.tsx` (e.g., `src/app/new-feature/page.tsx`).
+- Add a component: place under `src/components/<feature>/`, export from an `index.ts`, add CSS as `<Component>.module.css`.
+- Add backend model/resource: edit `amplify/data/resource.ts` (and update types in `src/types/`), then apply via Amplify CLI.
+- Add S3/upload behavior: extend `src/services/s3Service.ts` and `src/services/uploadService.ts`; UI should call the upload service only.
 
----
+Code examples (patterns you'll repeat)
+- Loading images with the shared component:
+  - `src/components/common/PromisedImage.tsx` — use this when rendering remote images to get consistent placeholders and error states.
+- Inspector components:
+  - `src/components/gallery/image-inspector/SingleImageInspector.tsx` and `MultiImageInspector.tsx` show how to compose control bars and preview panels.
 
-If you are unsure about a pattern, check for similar examples in the relevant directory before introducing new conventions.
+Tests / linting / formatting
+- This repository currently focuses on the app and amplify config. If tests/linting are added, follow existing package.json scripts. Start with `npm run dev` to validate runtime behavior.
+
+Integration notes & gotchas
+- Do NOT import AWS SDK directly into UI components — use the service layer (`src/services/*`).
+- Amplify resource files under `amplify/` are authoritative for cloud config; editing them requires Amplify CLI steps to deploy.
+- The app uses TypeScript; prefer updating `src/types/` when changing data shapes.
+
+If something is ambiguous
+- Search for examples in `src/components/` before introducing new patterns. Mirror folder and naming conventions used by `gallery/` and `upload/`.
+
+Feedback
+- If any section is unclear or you want more examples (e.g., a step-by-step for adding a model and wiring UI), tell me which area and I'll expand with concrete code edits.

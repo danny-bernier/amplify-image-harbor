@@ -98,48 +98,6 @@ export const uploadPrivateEdited = async (file: File, fileName: string): Promise
 };
 
 /**
- * @deprecated This function is not yet implemented
- * @todo Implement protected file access control
- * @param file - The image file to upload
- * @param fileName - The unique filename for S3 storage
- * @returns Promise resolving to the S3 key of the uploaded file
- * @throws Error indicating feature not implemented
- */
-export const uploadProtectedOriginal = async (file: File, fileName: string): Promise<string> => {
-  // const s3Key = `protected/images/original/${fileName}`;
-  // return uploadFile(s3Key, file);
-  throw new Error('TODO: Protected file uploads not implemented');
-};
-
-/**
- * @deprecated This function is not yet implemented
- * @todo Implement protected file access control
- * @param file - The thumbnail image file to upload
- * @param fileName - The unique filename for S3 storage
- * @returns Promise resolving to the S3 key of the uploaded file
- * @throws Error indicating feature not implemented
- */
-export const uploadProtectedThumbnail = async (file: File, fileName: string): Promise<string> => {
-  // const s3Key = `protected/images/thumbnail/${fileName}`;
-  // return uploadFile(s3Key, file);
-  throw new Error('TODO: Protected file uploads not implemented');
-};
-
-/**
- * @deprecated This function is not yet implemented
- * @todo Implement protected file access control
- * @param file - The edited image file to upload
- * @param fileName - The unique filename for S3 storage
- * @returns Promise resolving to the S3 key of the uploaded file
- * @throws Error indicating feature not implemented
- */
-export const uploadProtectedEdited = async (file: File, fileName: string): Promise<string> => {
-  // const s3Key = `protected/images/edited/${fileName}`;
-  // return uploadFile(s3Key, file);
-  throw new Error('TODO: Protected file uploads not implemented');
-};
-
-/**
  * Generate a signed URL for accessing a file in S3
  * @param path - The S3 path to the file
  * @returns Promise resolving to a signed URL valid for 1 hour

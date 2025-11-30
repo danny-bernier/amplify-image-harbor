@@ -7,9 +7,10 @@
  * @version 1.0.0
  */
 
-'use client';
+"use client";
 
 import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { FileSelectionStep } from './FileSelectionStep';
 import { MetadataStep } from './MetadataStep';
 import { UploadProgressStep, UploadProgressStepRef } from './UploadProgressStep';
@@ -46,6 +47,7 @@ export default function Upload() {
   });
 
   const uploadProgressRef = useRef<UploadProgressStepRef>(null);
+  const router = useRouter();
 
   const updateFiles = (files: SelectedFile[]) => {
     setUploadState(prev => ({
@@ -254,7 +256,7 @@ export default function Upload() {
             </button>
           )}
           {uploadState.currentStep === 3 && uploadState.uploadCompleted && (
-            <button onClick={resetUpload} className={styles.nextButton}>
+            <button onClick={() => { resetUpload(); router.push('/gallery'); }} className={styles.nextButton}>
               Complete & View Gallery
             </button>
           )}

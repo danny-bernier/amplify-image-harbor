@@ -110,7 +110,7 @@ export function FileSelectionStep({ selectedFiles, onFilesChange }: FileSelectio
               <button
                 onClick={() => removeFile(selectedFile.id)}
                 className={styles.fileRemove}
-                title="Remove image"
+                title="Remove Image"
               >
                 <svg
                   width="12"
@@ -165,24 +165,16 @@ export function FileSelectionStep({ selectedFiles, onFilesChange }: FileSelectio
                 </svg>
 
                 <p className={styles.dropZoneText}>
-                  {isDragActive || dragActive ? 'Drop here' : 'Add images'}
+                  {isDragActive || dragActive ? 'Drop here' : 'Add Images'}
                 </p>
               </div>
-            </div>
-
-            {/* Info text below */}
-            <div className={styles.fileInfo}>
-              <p className={styles.dropZoneSubtext}>
-                Click or drag & drop
-              </p>
             </div>
           </div>
         </div>
 
         {selectedFiles.length === 0 && (
           <div className={styles.emptyState}>
-            <p>Click the + box above to select your first images</p>
-            <p className={styles.dropZoneSubtext}>Supports JPEG, PNG, TIFF, and RAW formats (CR2, NEF, ARW, DNG, etc.)</p>
+            <p>Click "Add Images" to select or Drag & Drop to add images</p>
           </div>
         )}
       </div>

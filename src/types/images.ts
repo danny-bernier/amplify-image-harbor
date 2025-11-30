@@ -6,15 +6,14 @@
  * @version 1.0.0
  */
 
-import { useState, useEffect } from 'react'
-
 /**
  * Enhanced thumbnail size enumeration with value and name properties
  */
 export const THUMBNAIL_SIZES = {
-    SMALL: { value: 150, name: 'SMALL' },
-    MEDIUM: { value: 300, name: 'MEDIUM' },
-    LARGE: { value: 1200, name: 'LARGE' }
+    SMALL: { value: 100, name: 'SMALL' },
+    MEDIUM: { value: 250, name: 'MEDIUM' },
+    LARGE: { value: 500, name: 'LARGE' },
+    HUGE: { value: 1920, name: 'HUGE' },
 } as const;
 
 export type ThumbnailSizeKey = keyof typeof THUMBNAIL_SIZES;
@@ -40,11 +39,7 @@ export interface ThumbnailResult {
 /**
  * Complete result object containing all three thumbnail sizes
  */
-export interface ThumbnailGenerationResult {
-    small: ThumbnailResult;
-    medium: ThumbnailResult;
-    large: ThumbnailResult;
-}
+export type ThumbnailGenerationResult = { [K in ThumbnailSizeKey]: ThumbnailResult };
 
 export class S3Image {
     /**

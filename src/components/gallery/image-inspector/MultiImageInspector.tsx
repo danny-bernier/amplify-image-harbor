@@ -9,21 +9,20 @@
 
 'use client';
 
-import Image from 'next/image';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { GalleryImage } from '@/types/gallery';
-import type { ImageData } from '@/types/images';
-import { getThumbnailSizeForTargetSize } from '@/utils/imageUtils';
+import { HarborImage } from '@/types/images';
+import { getImageForTargetSize } from '@/utils/imageUtils';
+import PromisedImage from '@/components/common/PromisedImage';
 import ImageInspectorControlBar from './ImageInspectorControlBar';
 import FullscreenPreview from '@/components/common/FullscreenPreview';
 import styles from './MultiImageInspector.module.css';
 
 interface MultiImageInspectorProps {
-  selectedImages: GalleryImage[];
+  selectedImages: HarborImage[];
   onClearSelection: () => void;
-  onShare: (images: GalleryImage[]) => void;
-  onDelete: (images: GalleryImage[]) => void;
-  onRemoveImage?: (image: GalleryImage) => void;
+  onShare: (images: HarborImage[]) => void;
+  onDelete: (images: HarborImage[]) => void;
+  onRemoveImage?: (image: HarborImage) => void;
 }
 
 export default function MultiImageInspector({ 
@@ -35,7 +34,7 @@ export default function MultiImageInspector({
 }: MultiImageInspectorProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [fullscreenImage, setFullscreenImage] = useState<GalleryImage | null>(null);
+  const [fullscreenImage, setFullscreenImage] = useState<HarborImage | null>(null);
 
   const handleShare = () => {
     console.log('Share button clicked for images:', selectedImages.map(img => ({ id: img.id, title: img.title })));
@@ -84,25 +83,15 @@ export default function MultiImageInspector({
     return () => resizeObserver.disconnect();
   }, [updateContainerWidth]);
 
-  // Get optimal thumbnail for preview item
-  const getPreviewThumbnail = useCallback((image: ImageData) => {
-    if (containerWidth === 0) {
-      // Fallback while measuring
-      return { url: image.thumbnails.SMALL?.url || image.url };
-    }
-    
-    const itemWidth = calculatePreviewItemWidth(containerWidth);
-    const optimalSize = getThumbnailSizeForTargetSize(itemWidth);
-    
-    if (optimalSize) {
-      const thumbnail = image.thumbnails[optimalSize.name as keyof typeof image.thumbnails];
-      return { url: thumbnail?.url || image.url };
-    }
-    
-    return { url: image.url };
+  // Determine which S3 image to use for a preview item based on computed width.
+  const getPreviewS3Image = useCallback((image: HarborImage) => {
+    // While measuring, use a reasonable default target so thumbnails are available.
+    const itemWidth = containerWidth === 0 ? 120 : calculatePreviewItemWidth(containerWidth);
+    const target = Math.max(64, Math.round(itemWidth));
+    return getImageForTargetSize(image, target);
   }, [containerWidth, calculatePreviewItemWidth]);
 
-  const handleImageClick = (image: GalleryImage) => {
+  const handleImageClick = (image: HarborImage) => {
     setFullscreenImage(image);
   };
 
@@ -127,19 +116,24 @@ export default function MultiImageInspector({
           <div ref={gridRef} className={styles.previewGrid}>
             {selectedImages.map((image) => (
               <div key={image.id} className={styles.previewItem}>
-                <div 
-                  className={styles.previewImageWrapper} 
+                <div
+                  className={styles.previewImageWrapper}
                   onClick={() => handleImageClick(image)}
                   style={{ cursor: 'pointer' }}
                   title="Click to view fullscreen"
                 >
-                  <Image
-                    src={getPreviewThumbnail(image).url}
-                    alt={image.title || 'Selected image'}
-                    fill
-                    className={styles.previewImage}
-                    unoptimized
-                  />
+                  {(() => {
+                    const s3img = getPreviewS3Image(image);
+                    return (
+                      <PromisedImage
+                        url={s3img?.getUrl()}
+                        alt={image.title || 'Selected image'}
+                        fill
+                        className={styles.previewImage}
+                        unoptimized
+                      />
+                    );
+                  })()}
                   {onRemoveImage && (
                     <button
                       onClick={(e) => {
@@ -180,7 +174,7 @@ export default function MultiImageInspector({
       {/* Fullscreen Preview */}
       {fullscreenImage && (
         <FullscreenPreview
-          url={fullscreenImage.url}
+          url={fullscreenImage.s3image?.getUrl()}
           altText={fullscreenImage.description || fullscreenImage.title || 'Image preview'}
           isOpen={true}
           onClose={handleCloseFullscreen}
